@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Connection Test</title>
+</head>
+<body>
+    <h1>Testing Backend Connection</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testBackend() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                console.log('Testing backend connection...');
+                
+                // Test 1: Simple test endpoint
+                const response = await fetch('http://localhost:3000/api/test');
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <h2>✅ Backend Connection Successful!</h2>
+                    <p><strong>Response:</strong> ${data.message}</p>
+                    <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                `;
+                
+                console.log('✅ Backend test successful:', data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <h2>❌ Backend Connection Failed</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Details:</strong> ${error.stack}</p>
+                `;
+                
+                console.error('❌ Backend test failed:', error);
+            }
+        }
+        
+        // Run test when page loads
+        testBackend();
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        #results {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</body>
+</html>

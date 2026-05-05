@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency Fix - Set Laravel Port 8000</title>
+</head>
+<body>
+    <h1>🚨 Emergency Fix - Set Laravel Port 8000</h1>
+    
+    <div class="warning">
+        <h2>⚠️ Problem Identified</h2>
+        <p>Multiple Vue files are using old API URLs from localStorage. This will force reset ALL API URLs to Laravel port 8000.</p>
+    </div>
+    
+    <button onclick="emergencyFix()">🚨 Apply Emergency Fix</button>
+    <button onclick="testLaravel()">🧪 Test Laravel</button>
+    <button onclick="goToLogin()">🔐 Go to Login</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        // Emergency fix function
+        function emergencyFix() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🚨 Applying emergency fix...</p>';
+            
+            // Clear everything
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Set correct Laravel URL
+            localStorage.setItem('apiBaseUrl', 'http://localhost:8000/api');
+            
+            // Force reload to clear browser cache
+            setTimeout(() => {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Emergency Fix Applied!</h3>
+                        <p><strong>Cleared:</strong> All localStorage and sessionStorage</p>
+                        <p><strong>Set:</strong> API Base URL to http://localhost:8000/api</p>
+                        <p><strong>Next:</strong> Page will reload in 3 seconds...</p>
+                        <p><strong>🔄 After reload, test login again!</strong></p>
+                    </div>
+                `;
+                
+                // Force reload after 3 seconds
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            }, 1000);
+        }
+        
+        // Test Laravel directly
+        async function testLaravel() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🧪 Testing Laravel backend...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: 'instructor@theshieldmaidens.org', 
+                        password: 'instructor123' 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Laravel Backend Working!</h3>
+                            <p><strong>Status:</strong> Login successful</p>
+                            <p><strong>User:</strong> ${data.user?.name || 'Unknown'}</p>
+                            <p><strong>✅ Ready for Vue app!</strong></p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Laravel Login Failed</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Error:</strong> ${data.message || 'Unknown error'}</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Laravel Connection Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Is Laravel running on port 8000?</strong></p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Go to login
+        function goToLogin() {
+            window.location.href = '/instructor/login';
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .warning h2 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</body>
+</html>

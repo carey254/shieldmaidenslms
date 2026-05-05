@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reset API URL</title>
+</head>
+<body>
+    <h1>API URL Reset</h1>
+    <p>Clearing browser cache and setting correct API URL...</p>
+    
+    <script>
+        // Clear any existing API URL
+        localStorage.removeItem('apiBaseUrl');
+        
+        // Set the correct API URL
+        localStorage.setItem('apiBaseUrl', 'http://localhost:3000/api');
+        
+        // Clear any auth tokens
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        alert('✅ API URL has been reset to port 3000!');
+        
+        // Redirect to home page
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</body>
+</html>

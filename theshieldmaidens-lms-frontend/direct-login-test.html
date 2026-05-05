@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Login Test</title>
+</head>
+<body>
+    <h1>Direct Backend Login Test</h1>
+    
+    <form id="loginForm">
+        <h2>Admin Login Test</h2>
+        <input type="email" id="email" placeholder="Email" value="admin@shieldmaidens.org" required>
+        <input type="password" id="password" placeholder="Password" value="admin123" required>
+        <button type="submit">Login</button>
+    </form>
+    
+    <div id="results"></div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = '<p>Testing login...</p>';
+            
+            try {
+                console.log('Sending login request...');
+                
+                const response = await fetch('http://localhost:3001/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Login Successful!</h3>
+                            <p><strong>User:</strong> ${data.user.name}</p>
+                            <p><strong>Email:</strong> ${data.user.email}</p>
+                            <p><strong>Admin:</strong> ${data.user.is_admin}</p>
+                            <p><strong>Token:</strong> ${data.access_token.substring(0, 20)}...</p>
+                        </div>
+                    `;
+                    console.log('✅ Login successful:', data);
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Login Failed</h3>
+                            <p><strong>Error:</strong> ${data.message}</p>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                        </div>
+                    `;
+                    console.log('❌ Login failed:', data);
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Network Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Stack:</strong> ${error.stack}</p>
+                    </div>
+                `;
+                console.error('❌ Network error:', error);
+            }
+        });
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</body>
+</html>

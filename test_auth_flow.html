@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Flow Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Authentication Flow Test</h1>
+    
+    <div id="results"></div>
+    
+    <h2>Test Login</h2>
+    <button onclick="testLogin()">Test Student Login</button>
+    <button onclick="testAdminLogin()">Test Admin Login</button>
+    
+    <h2>Test Enrollment</h2>
+    <button onclick="testEnrollment()">Test Course Enrollment</button>
+    
+    <h2>Test API Access</h2>
+    <button onclick="testStudentAPI()">Test Student API</button>
+    <button onclick="testAdminAPI()">Test Admin API</button>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let authToken = '';
+
+        async function log(message) {
+            document.getElementById('results').innerHTML += '<pre>' + message + '</pre>';
+        }
+
+        async function testLogin() {
+            try {
+                const response = await axios.post(API_BASE + '/login', {
+                    email: 'testuser5@example.com',
+                    password: 'password123'
+                });
+                authToken = response.data.access_token;
+                log('✅ Student Login Success: ' + JSON.stringify(response.data, null, 2));
+            } catch (error) {
+                log('❌ Student Login Failed: ' + error.response?.data?.message || error.message);
+            }
+        }
+
+        async function testAdminLogin() {
+            try {
+                const response = await axios.post(API_BASE + '/login', {
+                    email: 'admin@theshieldmaidens.org',
+                    password: 'password'
+                });
+                authToken = response.data.access_token;
+                log('✅ Admin Login Success: ' + JSON.stringify(response.data, null, 2));
+            } catch (error) {
+                log('❌ Admin Login Failed: ' + error.response?.data?.message || error.message);
+            }
+        }
+
+        async function testEnrollment() {
+            if (!authToken) {
+                log('❌ Please login first');
+                return;
+            }
+            try {
+                const response = await axios.post(API_BASE + '/student/courses/1/enroll', {}, {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                log('✅ Enrollment Success: ' + JSON.stringify(response.data, null, 2));
+            } catch (error) {
+                log('❌ Enrollment Failed: ' + error.response?.data?.message || error.message);
+            }
+        }
+
+        async function testStudentAPI() {
+            if (!authToken) {
+                log('❌ Please login first');
+                return;
+            }
+            try {
+                const response = await axios.get(API_BASE + '/student/dashboard/stats', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                log('✅ Student API Success: ' + JSON.stringify(response.data, null, 2));
+            } catch (error) {
+                log('❌ Student API Failed: ' + error.response?.data?.message || error.message);
+            }
+        }
+
+        async function testAdminAPI() {
+            if (!authToken) {
+                log('❌ Please login first');
+                return;
+            }
+            try {
+                const response = await axios.get(API_BASE + '/admin/stats', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                });
+                log('✅ Admin API Success: ' + JSON.stringify(response.data, null, 2));
+            } catch (error) {
+                log('❌ Admin API Failed: ' + error.response?.data?.message || error.message);
+            }
+        }
+    </script>
+</body>
+</html>

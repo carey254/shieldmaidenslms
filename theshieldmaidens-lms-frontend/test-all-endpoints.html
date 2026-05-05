@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test All Backend Endpoints</title>
+</head>
+<body>
+    <h1>Testing All Backend Endpoints</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAllEndpoints() {
+            const resultsDiv = document.getElementById('results');
+            let results = '';
+            
+            // Test endpoints
+            const tests = [
+                { name: 'Test Endpoint', url: '/api/test', method: 'GET' },
+                { name: 'Student Announcements', url: '/api/student/announcements', method: 'GET' },
+                { name: 'Login (Admin)', url: '/api/login', method: 'POST', body: { email: 'admin@shieldmaidens.org', password: 'admin123' } },
+                { name: 'Login (Student)', url: '/api/login', method: 'POST', body: { email: 'student@shieldmaidens.org', password: 'student123' } },
+                { name: 'Register', url: '/api/register', method: 'POST', body: { name: 'Test User', email: 'test@example.com', password: 'password123', password_confirmation: 'password123' } },
+                { name: 'Forgot Password', url: '/api/forgot-password', method: 'POST', body: { email: 'test@example.com' } },
+                { name: 'Get User', url: '/api/user', method: 'GET' }
+            ];
+            
+            for (const test of tests) {
+                try {
+                    const options = {
+                        method: test.method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    };
+                    
+                    if (test.body) {
+                        options.body = JSON.stringify(test.body);
+                    }
+                    
+                    const response = await fetch('http://localhost:3000' + test.url, options);
+                    const data = await response.json();
+                    
+                    results += `
+                        <div class="test-result success">
+                            <h3>✅ ${test.name}</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Response:</strong> ${JSON.stringify(data, null, 2).substring(0, 200)}...</p>
+                        </div>
+                    `;
+                    
+                    console.log(`✅ ${test.name}:`, data);
+                    
+                } catch (error) {
+                    results += `
+                        <div class="test-result error">
+                            <h3>❌ ${test.name}</h3>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                        </div>
+                    `;
+                    
+                    console.error(`❌ ${test.name}:`, error);
+                }
+            }
+            
+            resultsDiv.innerHTML = results;
+        }
+        
+        // Run tests when page loads
+        testAllEndpoints();
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .test-result h3 {
+            margin: 0 0 10px 0;
+        }
+        .test-result p {
+            margin: 5px 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</body>
+</html>

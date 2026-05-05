@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instructor Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Instructor Dashboard Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Test Instructor Login</h2>
+        <button onclick="loginInstructor()">Login as Instructor</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 2: Test Frontend Access</h2>
+        <button onclick="openInstructorDashboard()">Open Instructor Dashboard</button>
+        <button onclick="openInstructorSettings()">Open Instructor Settings</button>
+        <div id="accessResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 3: Check User Roles</h2>
+        <button onclick="checkAllUsers()">Check All User Roles</button>
+        <div id="roleResult"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let currentUser = null;
+        
+        async function loginInstructor() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'john.instructor@theshieldmaidens.org',
+                        password: 'instructor123'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Login response:', data);
+                
+                if (data.access_token) {
+                    authToken = data.access_token;
+                    currentUser = data.user;
+                    
+                    document.getElementById('loginResult').innerHTML = `
+                        <div class="success">
+                            ✅ Login successful!<br>
+                            User: ${data.user.name}<br>
+                            Email: ${data.user.email}<br>
+                            Role: ${data.user.role}<br>
+                            Is Admin: ${data.user.is_admin}<br>
+                            Token: ${data.access_token.substring(0, 20)}...
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('loginResult').innerHTML = `<div class="error">❌ Login failed: ${JSON.stringify(data)}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function openInstructorDashboard() {
+            if (!authToken) {
+                document.getElementById('accessResult').innerHTML = '<div class="error">❌ Please login first!</div>';
+                return;
+            }
+            
+            // Store auth data in localStorage for the frontend
+            localStorage.setItem('token', authToken);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            
+            // Open the instructor dashboard
+            window.open('http://localhost:5173/instructor/dashboard', '_blank');
+            document.getElementById('accessResult').innerHTML = '<div class="success">✅ Opening instructor dashboard in new tab...</div>';
+        }
+        
+        function openInstructorSettings() {
+            if (!authToken) {
+                document.getElementById('accessResult').innerHTML = '<div class="error">❌ Please login first!</div>';
+                return;
+            }
+            
+            // Store auth data in localStorage for the frontend
+            localStorage.setItem('token', authToken);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            
+            // Open the instructor settings
+            window.open('http://localhost:5173/instructor/settings', '_blank');
+            document.getElementById('accessResult').innerHTML = '<div class="success">✅ Opening instructor settings in new tab...</div>';
+        }
+        
+        async function checkAllUsers() {
+            try {
+                const users = [
+                    { email: 'admin@theshieldmaidens.org', name: 'Admin' },
+                    { email: 'john.instructor@theshieldmaidens.org', name: 'Instructor' },
+                    { email: 'jane.student@theshieldmaidens.org', name: 'Student' },
+                    { email: 'mary.parent@theshieldmaidens.org', name: 'Parent' }
+                ];
+                
+                let result = '<h3>User Roles:</h3>';
+                
+                for (const user of users) {
+                    try {
+                        const response = await fetch('http://127.0.0.1:8000/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email: user.email,
+                                password: user.email.includes('admin') ? 'admin123' : 
+                                        user.email.includes('instructor') ? 'instructor123' :
+                                        user.email.includes('student') ? 'student123' : 'parent123'
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.user) {
+                            const roleClass = data.user.role === user.name.toLowerCase() ? 'success' : 'error';
+                            result += `<div class="${roleClass}">
+                                ${user.name}: ${data.user.role} ${data.user.role === user.name.toLowerCase() ? '✅' : '❌'}
+                            </div>`;
+                        }
+                    } catch (error) {
+                        result += `<div class="error">${user.name}: Error - ${error.message}</div>`;
+                    }
+                }
+                
+                document.getElementById('roleResult').innerHTML = result;
+                
+            } catch (error) {
+                document.getElementById('roleResult').innerHTML = `<div class="error">❌ Error checking users: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

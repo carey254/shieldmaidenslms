@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+</head>
+<body>
+    <h1>Clear Local Storage</h1>
+    <button onclick="clearStorage()">Clear All Storage</button>
+    <div id="result"></div>
+
+    <script>
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            document.getElementById('result').innerHTML = '<h2>Storage cleared! You can now try logging in again.</h2><p>Go to <a href="http://localhost:5174/">http://localhost:5174/</a> to login.</p>';
+        }
+    </script>
+</body>
+</html>

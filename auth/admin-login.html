@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login</title>
+</head>
+<body>
+  <h1>Admin Login</h1>
+  <p><a href="./index.html">Back to portals</a></p>
+
+  <label for="email">Email</label>
+  <input id="email" type="email" autocomplete="username" />
+
+  <label for="password">Password</label>
+  <input id="password" type="password" autocomplete="current-password" />
+
+  <button id="login-btn" type="button">Login as Admin</button>
+
+  <h3>Result</h3>
+  <pre id="result"></pre>
+
+  <script src="./shared-auth.js"></script>
+  <script>
+    document.getElementById("login-btn").addEventListener("click", function () {
+      submitRoleLogin("admin");
+    });
+  </script>
+</body>
+</html>

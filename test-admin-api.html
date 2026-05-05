@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px; padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Test Admin API Endpoints</h1>
+    <button onclick="testUsers()">Test Users API</button>
+    <button onclick="testSendMessage()">Test Send Message API</button>
+    <button onclick="testGetMessages()">Test Get Messages API</button>
+    <div id="result" class="result"></div>
+
+    <script>
+        async function testUsers() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/admin/users', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Users API Working!</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Users Count:</strong> ${data.length || 'N/A'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Users API Failed</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Users API Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testSendMessage() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/admin/messages/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        recipients: 'all',
+                        subject: 'Test Message',
+                        message: 'This is a test message',
+                        priority: 'medium'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Send Message API Working!</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Response:</strong> ${data.message}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Send Message API Failed</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Send Message API Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testGetMessages() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/admin/messages', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Get Messages API Working!</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Messages Count:</strong> ${data.length || 'N/A'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Get Messages API Failed</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Get Messages API Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

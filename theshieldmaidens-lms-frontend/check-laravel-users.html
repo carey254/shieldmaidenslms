@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Laravel Users</title>
+</head>
+<body>
+    <h1>🔍 Check Laravel Database Users</h1>
+    
+    <button onclick="checkAllUsers()">🔍 Check All Users in Database</button>
+    <button onclick="testLogin()">🧪 Test Login with All Credentials</button>
+    <div id="result"></div>
+    
+    <script>
+        // Test different credential combinations
+        const testCredentials = [
+            // From Laravel seeder
+            { email: 'admin@theshieldmaidens.org', password: 'admin123', role: 'Admin' },
+            { email: 'john.instructor@theshieldmaidens.org', password: 'instructor123', role: 'Instructor' },
+            { email: 'jane.student@theshieldmaidens.org', password: 'student123', role: 'Student' },
+            { email: 'mary.parent@theshieldmaidens.org', password: 'parent123', role: 'Parent' },
+            { email: 'test@example.com', password: 'password', role: 'Test Student' },
+            
+            // From our previous attempts
+            { email: 'instructor@theshieldmaidens.org', password: 'instructor123', role: 'Instructor (Old)' },
+            { email: 'instructor@theshieldmaidens.org', password: 'instructor123', role: 'Instructor (Old)' },
+            { email: 'student@theshieldmaidens.org', password: 'student123', role: 'Student (Old)' },
+            { email: 'admin@shieldmaidens.org', password: 'admin123', role: 'Admin (Old)' },
+        ];
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🧪 Testing all login credentials...</p>';
+            
+            let results = [];
+            
+            for (const cred of testCredentials) {
+                try {
+                    const response = await fetch('http://localhost:8000/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            email: cred.email, 
+                            password: cred.password 
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        results.push(`
+                            <div class="success">
+                                <h4>✅ ${cred.role}</h4>
+                                <p><strong>Email:</strong> ${cred.email}</p>
+                                <p><strong>Password:</strong> ${cred.password}</p>
+                                <p><strong>User:</strong> ${data.user?.name || 'Unknown'}</p>
+                                <p><strong>Token:</strong> ${data.access_token ? 'Received' : 'Not received'}</p>
+                            </div>
+                        `);
+                    } else {
+                        results.push(`
+                            <div class="error">
+                                <h4>❌ ${cred.role}</h4>
+                                <p><strong>Email:</strong> ${cred.email}</p>
+                                <p><strong>Password:</strong> ${cred.password}</p>
+                                <p><strong>Error:</strong> ${data.message || 'Unknown error'}</p>
+                            </div>
+                        `);
+                    }
+                } catch (error) {
+                    results.push(`
+                        <div class="error">
+                            <h4>🔥 ${cred.role} - Network Error</h4>
+                            <p><strong>Email:</strong> ${cred.email}</p>
+                            <p><strong>Password:</strong> ${cred.password}</p>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                        </div>
+                    `);
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="summary">
+                    <h3>🎯 Test Results - Working Credentials:</h3>
+                    ${results.join('')}
+                </div>
+            `;
+        }
+        
+        async function checkAllUsers() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>🔍 Checking Laravel database...</p>';
+            
+            try {
+                // Try to access a user endpoint to see if we can get user info
+                const response = await fetch('http://localhost:8000/api/test');
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Laravel Backend is Running!</h3>
+                            <p>Now test the login credentials below to find the working ones.</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Laravel Backend Issue</h3>
+                            <p>Status: ${response.status}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Cannot Connect to Laravel</h3>
+                        <p>Error: ${error.message}</p>
+                        <p>Make sure Laravel is running on port 8000</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .summary {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</body>
+</html>

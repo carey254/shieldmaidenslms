@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-section { 
+            background: #f0f0f0; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .test-btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        .test-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard Debug Test</h1>
+    
+    <div class="debug-section">
+        <h2>🔍 Current Status Check</h2>
+        <p><strong>Backend:</strong> Should be running on http://localhost:8000</p>
+        <p><strong>Frontend:</strong> Should be running on http://localhost:5173</p>
+        <p><strong>Admin Login:</strong> admin@theshieldmaidens.org / admin123</p>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🧪 Step-by-Step Testing</h2>
+        <ol>
+            <li>Open browser to: <a href="http://localhost:5173/admin/login" target="_blank">http://localhost:5173/admin/login</a></li>
+            <li>Login with admin credentials</li>
+            <li>Look for YELLOW debug box at top of dashboard</li>
+            <li>Click the RED "Test Button" - should show "Test click works" in console</li>
+            <li>Try the main buttons:
+                <ul>
+                    <li>"Create Course" - should open modal</li>
+                    <li>"Add Opportunity" - should open modal</li>
+                    <li>"Add Announcement" - should open modal</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔧 If Nothing Works:</h2>
+        <p>1. Check browser console (F12) for JavaScript errors</p>
+        <p>2. Check that both backend and frontend are running</p>
+        <p>3. Try refreshing the page (Ctrl+F5)</p>
+        <p>4. Clear browser cache</p>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📝 What Should Be Working:</h2>
+        <ul>
+            <li>✅ Backend API endpoints working (tested earlier)</li>
+            <li>✅ Database tables created and populated</li>
+            <li>✅ Frontend modals added to template</li>
+            <li>✅ Click handlers defined</li>
+            <li>✅ Reactive variables defined</li>
+        </ul>
+    </div>
+    
+    <script>
+        console.log('Debug page loaded - testing JavaScript');
+        
+        function testAPI() {
+            fetch('http://localhost:8000/api/admin/stats')
+                .then(response => response.json())
+                .then(data => console.log('API Test Success:', data))
+                .catch(error => console.error('API Test Error:', error));
+        }
+        
+        function testAuth() {
+            const token = localStorage.getItem('token');
+            console.log('Auth Token:', token ? 'Found' : 'Not found');
+        }
+        
+        // Auto-run tests
+        setTimeout(() => {
+            testAPI();
+            testAuth();
+        }, 1000);
+    </script>
+    
+    <button class="test-btn" onclick="testAPI()">Test API Connection</button>
+    <button class="test-btn" onclick="testAuth()">Check Auth Token</button>
+</body>
+</html>
