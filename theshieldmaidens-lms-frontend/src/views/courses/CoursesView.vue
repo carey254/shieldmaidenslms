@@ -54,14 +54,6 @@
           
           <div class="course-meta">
             <div class="meta-item">
-              <i class="fas fa-clock"></i>
-              <span>{{ course.duration }}</span>
-            </div>
-            <div class="meta-item">
-              <i class="fas fa-users"></i>
-              <span>{{ course.enrolledStudents }} students</span>
-            </div>
-            <div class="meta-item">
               <i class="fas fa-star"></i>
               <span>{{ course.rating || '4.5' }}</span>
             </div>
@@ -77,7 +69,7 @@
 
           <div class="course-actions">
             <button @click.stop="enrollCourse(course)" class="btn btn-primary btn-large">
-              {{ course.enrolled ? 'Continue Learning' : 'Enroll Now' }}
+              Enroll Now
             </button>
           </div>
         </div>
@@ -841,12 +833,6 @@ const enrollCourse = (course) => {
   // Store course info for post-login enrollment
   localStorage.setItem('courseToEnroll', JSON.stringify({ id: course.id }))
   
-  // If already enrolled, just redirect
-  if (course.enrolled) {
-    router.push(`/course/${course.id}/learn`)
-    return
-  }
-
   // Redirect to enrollment page
   router.push(`/course/${course.id}/enroll`)
 }

@@ -24,8 +24,6 @@
             <h3>{{ course.title }}</h3>
             <div class="course-meta">
               <span class="duration">{{ course.duration }}</span>
-              <span class="level">{{ course.level }}</span>
-              <span class="enrolled">{{ course.enrolledCount }} enrolled</span>
             </div>
           </div>
           

@@ -25,11 +25,14 @@ apiClient.interceptors.request.use((config) => {
 })
 
 // Direct API functions
-const login = async (email: string, password: string, role?: string) => {
+const login = async (email: string, password: string, options?: { captchaToken?: string; loginAttempts?: number }) => {
   try {
     const payload: any = { email, password }
-    if (role) {
-      payload.role = role
+    if (options?.captchaToken) {
+      payload.captcha_token = options.captchaToken
+    }
+    if (options?.loginAttempts) {
+      payload.login_attempts = options.loginAttempts
     }
     const response = await apiClient.post('/login', payload)
     return response.data
@@ -39,9 +42,13 @@ const login = async (email: string, password: string, role?: string) => {
   }
 }
 
-const register = async (userData: { name: string; email: string; password: string; password_confirmation: string }) => {
+const register = async (userData: { name: string; email: string; password: string; password_confirmation: string; captchaToken?: string }) => {
   try {
-    const response = await apiClient.post('/register', userData)
+    const payload: any = { ...userData }
+    if (userData.captchaToken) {
+      payload.captcha_token = userData.captchaToken
+    }
+    const response = await apiClient.post('/register', payload)
     return response.data
   } catch (error) {
     console.error('Registration error:', error)
@@ -109,12 +116,33 @@ export const useAuthStore = defineStore('auth', () => {
   
   // Getters
   const isAuthenticated = computed(() => !!token.value);
-  const isAdmin = computed(() => !!(user.value?.is_admin || user.value?.role === 'admin'));
+  const isAdmin = computed(() => !(user.value?.is_admin || user.value?.role === 'admin'));
   const isInstructor = computed(
-    () => !!(user.value?.is_instructor || user.value?.role === 'instructor' || user.value?.email?.includes('instructor@'))
+    () => !(user.value?.is_instructor || user.value?.role === 'instructor' || user.value?.email?.includes('instructor@'))
   );
   const isStudent = computed(() => !isAdmin.value && !isInstructor.value);
   const userRole = computed(() => user.value?.role || 'student');
+  
+  // Enhanced RBAC permissions
+  const permissions = computed(() => {
+    if (!user.value) return {};
+    
+    const role = user.value.role || 'student';
+    const basePermissions = {
+      student: ['read:courses', 'enroll:courses', 'view:profile'],
+      instructor: ['read:courses', 'create:courses', 'edit:courses', 'view:students', 'manage:enrollments'],
+      admin: ['read:all', 'create:all', 'edit:all', 'delete:all', 'manage:users', 'manage:system']
+    };
+    
+    return {
+      role,
+      permissions: basePermissions[role] || [],
+      canAccess: (resource: string) => {
+        const userPermissions = basePermissions[role] || [];
+        return userPermissions.some(permission => permission.includes(resource));
+      }
+    };
+  });
 
   /** Expected portal from login page: admin | instructor | student */
   function userMatchesPortal(expectedPortal: string, u: any): boolean {
@@ -132,9 +160,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Actions
-  async function loginAction(email: string, password: string, expectedPortal?: string): Promise<any> {
+  async function loginAction(email: string, password: string, options?: { captchaToken?: string; loginAttempts?: number }, expectedPortal?: string): Promise<any> {
     try {
-      const response = await login(email, password, expectedPortal);
+      const response = await login(email, password, { captchaToken: options?.captchaToken, loginAttempts: options?.loginAttempts });
 
       console.log('Login response:', response);
 
@@ -191,7 +219,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function registerAction(userData: { name: string; email: string; password: string; password_confirmation: string }): Promise<any> {
+  async function registerAction(userData: { name: string; email: string; password: string; password_confirmation: string; captchaToken?: string }): Promise<any> {
     await register(userData);
     await router.push({
       path: '/login',
@@ -330,6 +358,7 @@ export const useAuthStore = defineStore('auth', () => {
     isInstructor,
     isStudent,
     userRole,
+    permissions,
     loginAction,
     registerAction,
     logoutAction,

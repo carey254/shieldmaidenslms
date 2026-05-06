@@ -53,6 +53,15 @@
           </div>
         </div>
         
+        <!-- CAPTCHA -->
+        <div class="form-group">
+          <label>Security Verification</label>
+          <Captcha 
+            @captcha-verified="(verified) => captchaVerified.value = verified"
+            @captcha-changed="(token) => captchaToken.value = token"
+          />
+        </div>
+        
         <div class="form-group">
           <label for="password">Password</label>
           <div class="input-group">
@@ -175,6 +184,7 @@
 import { ref, computed, reactive, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { buildGoogleOAuthUrl } from '@/utils/oauth';
+import Captcha from '@/components/Captcha.vue';
 
 const name = ref('');
 const email = ref('');
@@ -186,6 +196,10 @@ const showConfirmPassword = ref(false);
 const isLoading = ref(false);
 const serverError = ref('');
 const authStore = useAuthStore();
+
+// Security state
+const captchaVerified = ref(false);
+const captchaToken = ref('');
 
 function startGoogleOAuth() {
   serverError.value = '';
@@ -230,12 +244,24 @@ const validateForm = () => {
   if (!name.value.trim()) {
     errors.name = 'Full name is required';
     isValid = false;
+  } else if (name.value.length > 50) {
+    errors.name = 'Full name must be less than 50 characters';
+    isValid = false;
   }
   
   // Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email.value) {
     errors.email = 'Email is required';
+    isValid = false;
+  } else if (email.value.length > 21) {
+    errors.email = 'Email must be less than 21 characters';
+    isValid = false;
+  } else if (/[<>"'&]/.test(email.value)) {
+    errors.email = 'Email contains invalid characters';
+    isValid = false;
+  } else if (/(https?:\/\/|www\.|\.com|\.net|\.org)/.test(email.value.toLowerCase())) {
+    errors.email = 'Email cannot be a URL';
     isValid = false;
   } else if (!emailRegex.test(email.value)) {
     errors.email = 'Please enter a valid email';
@@ -248,6 +274,9 @@ const validateForm = () => {
     isValid = false;
   } else if (password.value.length < 8) {
     errors.password = 'Password must be at least 8 characters';
+    isValid = false;
+  } else if (password.value.length > 21) {
+    errors.password = 'Password must be less than 21 characters';
     isValid = false;
   }
   
@@ -274,6 +303,12 @@ const togglePasswordVisibility = (field) => {
 const register = async () => {
   if (!validateForm()) return;
   
+  // CAPTCHA validation
+  if (!captchaVerified.value) {
+    serverError.value = 'Please complete the CAPTCHA verification';
+    return;
+  }
+  
   isLoading.value = true;
   serverError.value = '';
   
@@ -282,7 +317,8 @@ const register = async () => {
       name: name.value,
       email: email.value,
       password: password.value,
-      password_confirmation: confirmPassword.value
+      password_confirmation: confirmPassword.value,
+      captchaToken: captchaToken.value
     });
   } catch (err) {
     console.error('Registration failed:', err);
@@ -505,6 +541,28 @@ label {
   border-radius: 8px;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+}
+
+/* CAPTCHA styles */
+.captcha-container {
+  margin: 1rem 0;
+}
+
+.captcha-display {
+  margin-bottom: 0.5rem;
+}
+
+.captcha-input-field {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.captcha-input-field:focus {
+  outline: none;
+  border-color: #4f46e5;
 }
 
 .divider {

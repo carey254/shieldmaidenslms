@@ -4,9 +4,6 @@
     <section class="hero-section">
       <div class="hero-content">
         <div class="hero-left">
-          <div class="hero-logo">
-            <img src="D:\LMS\theshieldmaidens-lms-frontend\public\logo.png" alt="GVRC Gender Violence Recovery Centre" class="hero-logo-img">
-          </div>
           <p class="hero-subtitle">Empowering Young People with Digital Safety & Technology Skills</p>
           <div class="cta-buttons">
             <router-link to="/login" class="btn-primary">Sign In to Learn</router-link>
@@ -259,28 +256,6 @@ onMounted(() => {
   text-align: center;
 }
 
-.hero-logo {
-  margin-bottom: 2rem;
-}
-
-.hero-logo-img {
-  height: 120px;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-  animation: fadeInDown 1s ease-out;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 .hero-content h1 {
   font-size: 3.5rem;
@@ -644,8 +619,5 @@ onMounted(() => {
     font-size: 1.1rem;
   }
   
-  .hero-logo-img {
-    height: 80px;
   }
-}
 </style>

@@ -42,12 +42,15 @@
 
         <div v-if="error" class="error-message">
           {{ error }}
+          <div v-if="isAccountLocked" class="lockout-info">
+            <small>Account temporarily locked for security reasons.</small>
+          </div>
           <div v-if="error.includes('Network error')" class="error-details">
             <small>Please ensure:</small>
             <ul>
               <li>Backend server is running on 127.0.0.1:8000</li>
               <li>No firewall blocking the connection</li>
-              <li>CORS is properly configured on the backend</li>
+              <li>CORS is properly configured on backend</li>
             </ul>
             <button type="button" @click="testConnection" class="btn btn-sm btn-secondary">Test Connection</button>
           </div>
@@ -68,6 +71,15 @@
         </div>
         
         <form @submit.prevent="login">
+          <!-- CAPTCHA -->
+          <div class="form-group">
+            <label>Security Verification</label>
+            <Captcha 
+              @captcha-verified="(verified) => captchaVerified.value = verified"
+              @captcha-changed="(token) => captchaToken.value = token"
+            />
+          </div>
+          
           <div class="form-group">
             <div class="flex justify-between items-center">
               <label for="password">Password</label>
@@ -602,6 +614,38 @@ h1 {
   margin-bottom: 1.25rem;
   line-height: 1.45;
 }
+
+.lockout-info {
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  color: #92400e;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* CAPTCHA styles */
+.captcha-container {
+  margin: 1rem 0;
+}
+
+.captcha-display {
+  margin-bottom: 0.5rem;
+}
+
+.captcha-input-field {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.captcha-input-field:focus {
+  outline: none;
+  border-color: #F97316;
+}
 </style>
 
 <script setup>
@@ -610,6 +654,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { testApiConnection, testLoginEndpoint } from '@/utils/api-test';
 import apiService from '@/services/api';
+import Captcha from '@/components/Captcha.vue';
 
 const email = ref('');
 const password = ref('');
@@ -621,6 +666,13 @@ const registrationSuccess = ref(false);
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+
+// Security state
+const loginAttempts = ref(0);
+const isAccountLocked = ref(false);
+const lockoutTime = ref(null);
+const captchaVerified = ref(false);
+const captchaToken = ref('');
 
 // Email-first state
 const emailChecked = ref(false);
@@ -679,11 +731,46 @@ const changeEmail = () => {
 };
 
 const login = async () => {
-  if (isLoading.value) return;
+  if (isLoading.value || isAccountLocked.value) return;
   
-  // Basic validation
+  // Check account lockout
+  if (isAccountLocked.value) {
+    const remainingTime = Math.ceil((lockoutTime.value - Date.now()) / 60000);
+    error.value = `Account locked. Try again in ${remainingTime} minutes.`;
+    return;
+  }
+  
+  // Enhanced input validation
   if (!email.value || !password.value) {
     error.value = 'Please fill in all fields';
+    return;
+  }
+  
+  // Username validation - max 21 chars, no special chars, no URL
+  if (email.value.length > 21) {
+    error.value = 'Email/Username must be less than 21 characters';
+    return;
+  }
+  
+  if (/[<>"'&]/.test(email.value)) {
+    error.value = 'Email/Username contains invalid characters';
+    return;
+  }
+  
+  if (/(https?:\/\/|www\.|\.com|\.net|\.org)/.test(email.value.toLowerCase())) {
+    error.value = 'Email/Username cannot be a URL';
+    return;
+  }
+  
+  // Password validation - max 21 chars
+  if (password.value.length > 21) {
+    error.value = 'Password must be less than 21 characters';
+    return;
+  }
+  
+  // CAPTCHA validation
+  if (!captchaVerified.value) {
+    error.value = 'Please complete the CAPTCHA verification';
     return;
   }
   
@@ -696,8 +783,21 @@ const login = async () => {
   
   try {
     console.log('Calling authStore.login...');
+    
+    // Increment login attempts
+    loginAttempts.value++;
+    
     // Let backend determine the role based on email/password
-    await authStore.loginAction(email.value, password.value);
+    await authStore.loginAction(email.value, password.value, {
+      captchaToken: captchaToken.value,
+      loginAttempts: loginAttempts.value
+    });
+    
+    // Reset on successful login
+    loginAttempts.value = 0;
+    isAccountLocked.value = false;
+    lockoutTime.value = null;
+    
     // Post-login redirect, pending course enrollment, and returnUrl are handled in the auth store.
   } catch (err) {
     console.error('Login error:', err);
@@ -712,8 +812,17 @@ const login = async () => {
         typeof msg === 'string' && msg.length > 0
           ? msg
           : 'Invalid credentials. Please check your email and password.';
+      
+      // Check if account should be locked after 5 attempts
+      if (loginAttempts.value >= 5) {
+        isAccountLocked.value = true;
+        lockoutTime.value = Date.now() + (15 * 60 * 1000); // 15 minutes lockout
+        error.value = 'Too many failed attempts. Account locked for 15 minutes.';
+      }
     } else if (err.response?.status === 403) {
       error.value = 'Access denied. This account may not have the required role for this portal.';
+    } else if (err.response?.status === 429) {
+      error.value = 'Too many login attempts. Please try again later.';
     } else if (err.response?.data?.message) {
       error.value = err.response.data.message;
     } else {
