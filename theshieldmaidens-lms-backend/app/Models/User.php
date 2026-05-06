@@ -158,6 +158,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is a facilitator.
+     */
+    public function isFacilitator()
+    {
+        return $this->role === 'facilitator';
+    }
+
+    /**
      * Log user activity
      */
     public function logActivity($title, $description, $type = 'system', $metadata = [])

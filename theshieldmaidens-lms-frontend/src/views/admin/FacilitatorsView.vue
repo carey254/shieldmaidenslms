@@ -43,7 +43,14 @@
 
     <!-- Facilitators Table -->
     <div class="facilitators-table-container">
-      <table class="facilitators-table">
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading facilitators...</p>
+      </div>
+      
+      <!-- Table Content -->
+      <table v-else class="facilitators-table">
         <thead>
           <tr>
             <th>Facilitator</th>
@@ -77,7 +84,7 @@
             </td>
             <td>
               <span class="status-badge" :class="facilitator.status">
-                {{ facilitator.status }}
+                {{ facilitator.status || 'active' }}
               </span>
             </td>
             <td>
@@ -101,10 +108,11 @@
       </table>
       
       <!-- Empty State -->
-      <div v-if="filteredFacilitators.length === 0" class="empty-state">
+      <div v-if="!loading && filteredFacilitators.length === 0" class="empty-state">
         <i class="fas fa-chalkboard-teacher"></i>
         <h3>No facilitators found</h3>
-        <p>Try adjusting your search or filters</p>
+        <p v-if="searchQuery || statusFilter">Try adjusting your search or filters</p>
+        <p v-else>No facilitators have been added yet. Click "Add Facilitator" to get started.</p>
       </div>
     </div>
 
@@ -205,6 +213,7 @@ const availableCourses = ref([])
 const searchQuery = ref('')
 const statusFilter = ref('')
 const refreshing = ref(false)
+const loading = ref(true)
 const showAddFacilitatorModal = ref(false)
 const showAssignCoursesModal = ref(false)
 const selectedFacilitator = ref(null)
@@ -250,11 +259,19 @@ const fetchFacilitators = async () => {
         'Accept': 'application/json'
       }
     })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
     const data = await response.json()
     facilitators.value = data.data || []
+    console.log('Facilitators loaded:', facilitators.value.length)
   } catch (error) {
     console.error('Error fetching facilitators:', error)
-    showMessage('Error fetching facilitators', 'error')
+    showMessage('Error loading facilitators. Please check your connection.', 'error')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -266,10 +283,17 @@ const fetchCourses = async () => {
         'Accept': 'application/json'
       }
     })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
     const data = await response.json()
     availableCourses.value = data.data || []
+    console.log('Courses loaded:', availableCourses.value.length)
   } catch (error) {
     console.error('Error fetching courses:', error)
+    showMessage('Error loading courses. Please check your connection.', 'error')
   }
 }
 
@@ -279,9 +303,14 @@ const filterFacilitators = () => {
 
 const refreshFacilitators = async () => {
   refreshing.value = true
-  await fetchFacilitators()
-  refreshing.value = false
-  showMessage('Facilitators refreshed successfully', 'success')
+  try {
+    await Promise.all([fetchFacilitators(), fetchCourses()])
+    showMessage('Data refreshed successfully', 'success')
+  } catch (error) {
+    showMessage('Error refreshing data', 'error')
+  } finally {
+    refreshing.value = false
+  }
 }
 
 const viewFacilitator = (facilitator) => {
@@ -387,6 +416,7 @@ const showMessage = (text, type) => {
 
 // Lifecycle
 onMounted(() => {
+  console.log('FacilitatorsView mounted')
   fetchFacilitators()
   fetchCourses()
 })
@@ -643,6 +673,31 @@ onMounted(() => {
 .course-info small {
   color: #6c757d;
   font-size: 0.8rem;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Empty State */

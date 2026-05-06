@@ -70,6 +70,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/notifications', [InstructorController::class, 'getNotifications']);
     });
     
+    // Facilitator routes (require facilitator role)
+    Route::middleware('facilitator')->prefix('facilitator')->group(function () {
+        Route::get('/dashboard/stats', [InstructorController::class, 'getDashboardStats']);
+        Route::get('/dashboard/courses', [InstructorController::class, 'getRecentCourses']);
+        Route::get('/dashboard/activities', [InstructorController::class, 'getRecentActivities']);
+        Route::get('/dashboard/tasks', [InstructorController::class, 'getPendingTasks']);
+        Route::get('/messages', [InstructorController::class, 'getMessages']);
+        Route::post('/messages/send', [InstructorController::class, 'sendMessage']);
+        Route::get('/meetings', [InstructorController::class, 'getMeetings']);
+        Route::get('/opportunities', [InstructorController::class, 'getOpportunities']);
+        Route::get('/notifications', [InstructorController::class, 'getNotifications']);
+    });
+    
     // Student routes (require student role)
     Route::middleware('student')->prefix('student')->group(function () {
         Route::get('/dashboard/stats', [StudentController::class, 'getDashboardStats']);
@@ -107,6 +120,27 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/notifications/send', [AdminController::class, 'sendNotification']);
         Route::post('/meetings', [AdminController::class, 'createMeeting']);
         Route::put('/meetings/{meetingId}', [AdminController::class, 'updateMeeting']);
+        
+        // Category management
+        Route::get('/categories', [AdminController::class, 'getCategories']);
+        Route::post('/categories', [AdminController::class, 'createCategory']);
+        Route::patch('/categories/{categoryId}', [AdminController::class, 'updateCategory']);
+        Route::delete('/categories/{categoryId}', [AdminController::class, 'deleteCategory']);
+        
+        // System settings
+        Route::get('/settings', [AdminController::class, 'getSettings']);
+        Route::put('/settings', [AdminController::class, 'updateSettings']);
+        
+        // User management
+        Route::post('/users', [AdminController::class, 'createUser']);
+        Route::put('/users/{userId}', [AdminController::class, 'updateUser']);
+        
+        // Enrollment monitoring
+        Route::get('/enrollments/stats', [AdminController::class, 'getEnrollmentStats']);
+        
+        // Announcements
+        Route::get('/announcements', [AdminController::class, 'getAnnouncements']);
+        Route::post('/announcements', [AdminController::class, 'createAnnouncement']);
     });
 });
 
@@ -117,23 +151,3 @@ Route::fallback(function(){
     ], 404);
 });
 
-// Debug route for testing
-Route::get('/debug-login', function() {
-    $user = \App\Models\User::where('email', 'admin@theshieldmaidens.org')->first();
-    
-    if (!$user) {
-        return response()->json(['error' => 'User not found'], 404);
-    }
-    
-    $passwordCheck = \Illuminate\Support\Facades\Hash::check('admin123', $user->password);
-    
-    return response()->json([
-        'user_found' => $user ? true : false,
-        'user_id' => $user->id ?? null,
-        'user_email' => $user->email ?? null,
-        'user_role' => $user->role ?? null,
-        'user_is_admin' => $user->is_admin ?? false,
-        'password_matches' => $passwordCheck,
-        'password_hash' => substr($user->password, 0, 20) . '...'
-    ]);
-});

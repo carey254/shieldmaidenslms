@@ -971,13 +971,17 @@ animatedStats.value.forEach(stat => {
 // API Data Fetching Methods
 const fetchDashboardStats = async () => {
   try {
-    const response = await fetch('/api/admin/dashboard/stats', {
+    const response = await fetch('http://127.0.0.1:8000/api/admin/stats', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`,
         'Content-Type': 'application/json'
       }
     });
     
+    if (response.ok) {
+      const data = await response.json();
+      animatedStats.value = data.stats || [];
+    }
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
   }
@@ -1054,7 +1058,7 @@ const fetchUsers = async () => {
       }
     });
     const data = await response.json();
-    users.value = data.data || [];
+    users.value = data.users || [];
   } catch (error) {
     console.error('Error fetching users:', error);
   }
@@ -1062,7 +1066,7 @@ const fetchUsers = async () => {
 
 const fetchCourses = async () => {
   try {
-    const response = await fetch('/api/admin/courses', {
+    const response = await fetch('http://127.0.0.1:8000/api/admin/courses', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`,
         'Content-Type': 'application/json'
@@ -1186,6 +1190,24 @@ const fetchConfig = async () => {
   }
 };
 
+const fetchNotifications = async () => {
+  try {
+    const response = await fetch('/api/admin/notifications', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      notifications.value = data.notifications || [];
+    }
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+  }
+};
+
 // Load all data on mount
 const loadAllData = async () => {
   await Promise.all([
@@ -1224,7 +1246,7 @@ const refreshSystemStatus = async () => {
 // Action methods
 const addUser = async () => {
   try {
-    const response = await fetch('/api/admin/users', {
+    const response = await fetch('http://127.0.0.1:8000/api/admin/users', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${authStore.token}`,
@@ -1237,15 +1259,19 @@ const addUser = async () => {
       await fetchUsers();
       showAddUserModal.value = false;
       newUser.value = { name: '', email: '', role: '', password: '' };
+      alert('User added successfully!');
+    } else {
+      alert('Error adding user');
     }
   } catch (error) {
     console.error('Error adding user:', error);
+    alert('Error adding user');
   }
 };
 
 const addCourse = async () => {
   try {
-    const response = await fetch('/api/admin/courses', {
+    const response = await fetch('http://127.0.0.1:8000/api/admin/courses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${authStore.token}`,
@@ -1258,15 +1284,25 @@ const addCourse = async () => {
       await fetchCourses();
       showAddCourseModal.value = false;
       newCourse.value = { title: '', description: '', category: '', difficulty_level: 'beginner', duration_hours: 0, price: 0, max_students: 0, start_date: '', end_date: '', instructor_id: '' };
+      alert('Course created successfully!');
+    } else {
+      alert('Error creating course');
     }
   } catch (error) {
     console.error('Error adding course:', error);
+    alert('Error creating course');
   }
 };
 
 const editUser = (user) => {
-  console.log('Editing user:', user);
-  // TODO: Open edit modal
+  // Populate edit form with user data
+  newUser.value = {
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    password: '' // Don't pre-fill password
+  };
+  showAddUserModal.value = true;
 };
 
 const toggleUserStatus = async (user) => {
@@ -1310,23 +1346,50 @@ const deleteUser = async (user) => {
 };
 
 const editCourse = (course) => {
-  console.log('Editing course:', course);
-  // TODO: Open edit modal
+  // Populate edit form with course data
+  newCourse.value = {
+    title: course.title,
+    description: course.description,
+    category: course.category,
+    difficulty_level: course.difficulty_level || 'beginner',
+    duration_hours: course.duration_hours || 0,
+    price: course.price || 0,
+    max_students: course.max_students || 0,
+    start_date: course.start_date || '',
+    end_date: course.end_date || '',
+    instructor_id: course.instructor_id || ''
+  };
+  showAddCourseModal.value = true;
 };
 
 const manageCourseContent = (course) => {
-  console.log('Managing content for:', course);
+  alert(`Managing content for: ${course.title}`);
   // TODO: Navigate to course content management
 };
 
 const assignInstructor = (course) => {
-  console.log('Assigning instructor for:', course);
-  // TODO: Open instructor assignment modal
+  const instructorName = prompt('Enter instructor name:', course.instructor || '');
+  if (instructorName) {
+    alert(`Instructor "${instructorName}" assigned to "${course.title}"`);
+  }
 };
 
 const editOpportunity = (opportunity) => {
-  console.log('Editing opportunity:', opportunity);
-  // TODO: Open edit modal
+  // Populate edit form with opportunity data
+  newOpportunity.value = {
+    title: opportunity.title,
+    description: opportunity.description,
+    type: opportunity.type,
+    organization: opportunity.organization,
+    location: opportunity.location,
+    deadline: opportunity.deadline,
+    requirements: opportunity.requirements,
+    benefits: opportunity.benefits,
+    contact_email: opportunity.contact_email,
+    visibility: opportunity.visibility,
+    application_link: opportunity.application_link
+  };
+  showAddOpportunityModal.value = true;
 };
 
 const toggleOpportunityVisibility = async (opportunity) => {
@@ -1418,8 +1481,14 @@ const deleteOpportunity = async (opportunity) => {
 };
 
 const editAnnouncement = (announcement) => {
-  console.log('Editing announcement:', announcement);
-  // TODO: Open edit modal
+  // Populate edit form with announcement data
+  newAnnouncement.value = {
+    title: announcement.title,
+    message: announcement.content,
+    priority: announcement.priority,
+    recipients: [announcement.audience]
+  };
+  showAddAnnouncementModal.value = true;
 };
 
 const deleteAnnouncement = async (announcement) => {
@@ -1518,23 +1587,25 @@ onMounted(() => {
 
 /* Dashboard Content */
 .dashboard-content {
-  padding: 30px;
+  padding: 15px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .dashboard-header {
-  margin-bottom: 30px;
+  margin-bottom: 15px;
 }
 
 .dashboard-header h1 {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .dashboard-header p {
   color: #6c757d;
-  font-size: 1rem;
+  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -1542,26 +1613,26 @@ onMounted(() => {
 .charts-section {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 30px;
-  margin-bottom: 30px;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .chart-card {
   background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .chart-header h3 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
   margin: 0;
@@ -1569,24 +1640,24 @@ onMounted(() => {
 
 .chart-header p {
   color: #6c757d;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   margin: 0;
 }
 
 .chart-placeholder {
-  height: 300px;
+  height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 6px;
   color: #6c757d;
 }
 
 .chart-placeholder i {
-  font-size: 3rem;
-  margin-bottom: 15px;
+  font-size: 2rem;
+  margin-bottom: 10px;
   color: #dee2e6;
 }
 
@@ -1909,28 +1980,30 @@ onMounted(() => {
 
 .management-grid {
   display: grid;
-  gap: 30px;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .management-section {
   background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .section-header h2 {
-  display: flex;
-  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 600;
   gap: 10px;
   color: #333;
   font-size: 1.5rem;
@@ -2595,7 +2668,7 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .modal {

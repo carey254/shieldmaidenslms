@@ -30,6 +30,7 @@ class RegisterRequest extends FormRequest
                 'confirmed',
                 'min:8'
             ],
+            'role' => ['sometimes', 'in:student,facilitator,admin'],
         ];
     }
 

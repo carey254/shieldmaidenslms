@@ -4,7 +4,7 @@
       <!-- Logo Section -->
       <div class="navbar-brand">
         <div class="logo-container">
-          <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-img" decoding="async" />
+          <img src="D:\LMS\theshieldmaidens-lms-frontend\public\logo.png" alt="The Shield Maidens" class="logo-img" decoding="async" />
           <div class="logo-text">
             <span class="logo-title">E-learning Management System</span>
             <span class="logo-subtitle">Learning Management System</span>
@@ -147,7 +147,7 @@ onMounted(() => {
 
 <style scoped>
 .navbar {
-  background: linear-gradient(135deg, #fff8f9fa, #e3e2fd);
+  background: #fff8f9fa;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   position: fixed;
   top: 0;
@@ -180,7 +180,7 @@ onMounted(() => {
 }
 
 .logo-img {
-  height: 40px;
+  height: 50px;
   width: auto;
   object-fit: contain;
 }
@@ -195,14 +195,14 @@ onMounted(() => {
 .logo-title {
   color: #333;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: bold;
   line-height: 1.2;
 }
 
 .logo-subtitle {
   color: #666;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: bold;
   line-height: 1.2;
 }
 
@@ -217,21 +217,24 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #333;
-  text-decoration: none;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-weight: 500;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
   transition: all 0.3s ease;
 }
 
 .nav-link:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #000;
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-link.active {
-  background: rgba(0, 0, 0, 0.2);
-  color: #000;
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
 
 .nav-link.active::after {

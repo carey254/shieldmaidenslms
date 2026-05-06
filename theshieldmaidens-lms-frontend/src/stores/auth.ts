@@ -225,6 +225,101 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Profile management functions
+  const updateProfile = async (profileData: any) => {
+    try {
+      const response = await apiClient.put('/admin/profile', profileData)
+      // Update local user data
+      user.value = { ...user.value, ...profileData }
+      localStorage.setItem('user', JSON.stringify(user.value))
+      return response.data
+    } catch (error) {
+      console.error('Profile update error:', error)
+      throw error
+    }
+  }
+
+  const uploadAvatar = async (file: File) => {
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      
+      const response = await apiClient.post('/admin/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      // Update local user data
+      user.value = { ...user.value, avatar: response.data.avatar }
+      localStorage.setItem('user', JSON.stringify(user.value))
+      return response.data
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      throw error
+    }
+  }
+
+  const changePassword = async (passwordData: any) => {
+    try {
+      const response = await apiClient.put('/admin/security/password', passwordData)
+      return response.data
+    } catch (error) {
+      console.error('Password change error:', error)
+      throw error
+    }
+  }
+
+  const updateSecuritySettings = async (settings: any) => {
+    try {
+      const response = await apiClient.put('/admin/security/settings', settings)
+      return response.data
+    } catch (error) {
+      console.error('Security settings update error:', error)
+      throw error
+    }
+  }
+
+  const getActiveSessions = async () => {
+    try {
+      const response = await apiClient.get('/admin/security/sessions')
+      return response.data
+    } catch (error) {
+      console.error('Get sessions error:', error)
+      throw error
+    }
+  }
+
+  const terminateSession = async (sessionId: string) => {
+    try {
+      const response = await apiClient.delete(`/admin/security/sessions/${sessionId}`)
+      return response.data
+    } catch (error) {
+      console.error('Terminate session error:', error)
+      throw error
+    }
+  }
+
+  const updatePreferences = async (preferences: any) => {
+    try {
+      const response = await apiClient.put('/admin/preferences', preferences)
+      return response.data
+    } catch (error) {
+      console.error('Preferences update error:', error)
+      throw error
+    }
+  }
+
+  const getPreferences = async () => {
+    try {
+      const response = await apiClient.get('/admin/preferences')
+      return response.data
+    } catch (error) {
+      console.error('Get preferences error:', error)
+      throw error
+    }
+  }
+
   return {
     user,
     token,
@@ -240,6 +335,14 @@ export const useAuthStore = defineStore('auth', () => {
     logoutAction,
     setReturnUrl,
     completeOAuthLogin,
-    finalizePendingCourseEnrollment
+    finalizePendingCourseEnrollment,
+    updateProfile,
+    uploadAvatar,
+    changePassword,
+    updateSecuritySettings,
+    getActiveSessions,
+    terminateSession,
+    updatePreferences,
+    getPreferences
   };
 });

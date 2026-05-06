@@ -5,7 +5,6 @@ import Header from '@/components/layout/Header.vue';
 import Footer from '@/components/layout/Footer.vue';
 import UserProfileDropdown from '@/components/layout/UserProfileDropdown.vue';
 import StudentNavbar from '@/components/layout/StudentNavbar.vue';
-import AdminNavbar from '@/components/layout/AdminNavbar.vue';
 import InstructorSidebar from '@/components/layout/InstructorSidebar.vue';
 import { useAuthStore } from '@/stores/auth';
 
@@ -25,17 +24,6 @@ const isStudentPage = computed(() => {
          route.path.startsWith('/my-courses');
 });
 
-// Check if current route is admin page
-const isAdminPage = computed(() => {
-  return route.path.startsWith('/admin');
-});
-
-const isAdminLoginRoute = computed(() => route.path === '/admin/login');
-
-/** Authenticated admin shell (navbar): not on standalone login */
-const useAdminShell = computed(
-  () => route.path.startsWith('/admin') && !isAdminLoginRoute.value
-);
 
 // Check if current route is instructor page
 const isInstructorPage = computed(() => {
@@ -49,11 +37,12 @@ const useInstructorShell = computed(
 );
 
 const showAppFooter = computed(() => {
-  if (isAdminLoginRoute.value || isInstructorLoginRoute.value) return false;
+  if (isInstructorLoginRoute.value) return false;
+  // Don't show footer for admin pages - AdminWrapper handles it
+  if (route.path.startsWith('/admin')) return false;
   return (
     (!isStudentPage.value && !isInstructorPage.value) ||
-    (isStudentPage.value && !isDashboard.value) ||
-    isAdminPage.value
+    (isStudentPage.value && !isDashboard.value)
   );
 });
 
@@ -64,57 +53,8 @@ const isDashboard = computed(() => {
 
 // Notification state
 const showNotifications = ref(false);
-const unreadCount = ref(0); // Start with 0 notifications
-const notifications = ref([]); // Start completely empty
-
-// Possible message types from instructors/admins
-const messageTypes = [
-  {
-    title: 'New Assignment Posted',
-    messages: [
-      'Your instructor has posted a new assignment for Mathematics',
-      'A new Science lab assignment is now available',
-      'History essay assignment has been uploaded',
-      'Programming challenge has been posted'
-    ]
-  },
-  {
-    title: 'Class Session Update',
-    messages: [
-      'Your instructor has scheduled a new class session',
-      'Class timing has been updated for tomorrow',
-      'Extra session added for exam preparation',
-      'Class location has been changed'
-    ]
-  },
-  {
-    title: 'Grade Posted',
-    messages: [
-      'Your instructor has graded your latest submission',
-      'New grades are available for review',
-      'Your quiz results have been posted',
-      'Assignment feedback has been provided'
-    ]
-  },
-  {
-    title: 'Important Announcement',
-    messages: [
-      'Admin: System maintenance scheduled for tonight',
-      'Your instructor: Important exam information',
-      'Admin: New course materials available',
-      'Your instructor: Class cancellation notice'
-    ]
-  },
-  {
-    title: 'Deadline Reminder',
-    messages: [
-      'Your instructor: Assignment due tomorrow',
-      'Admin: Course enrollment deadline approaching',
-      'Your instructor: Quiz deadline reminder',
-      'Admin: Payment reminder for course fees'
-    ]
-  }
-];
+const unreadCount = ref(0);
+const notifications = ref([]);
 
 // Notification functions
 const toggleNotifications = () => {
@@ -131,15 +71,11 @@ const markAllAsRead = () => {
   unreadCount.value = 0;
 };
 
-// Generate random real-time notification
-const generateNotification = () => {
-  const messageType = messageTypes[Math.floor(Math.random() * messageTypes.length)];
-  const message = messageType.messages[Math.floor(Math.random() * messageType.messages.length)];
-  const sender = Math.random() > 0.5 ? 'Instructor' : 'Admin';
-  
+// Generate real notification from API or real events
+const generateNotification = (title, message, sender = 'System') => {
   return {
     id: Date.now(),
-    title: messageType.title,
+    title: title,
     message: message,
     sender: sender,
     time: 'Just now',
@@ -147,23 +83,9 @@ const generateNotification = () => {
   };
 };
 
-// Simulate real-time notifications from instructors/admins
+// Real-time notifications will be handled by API calls
 onMounted(() => {
-  // DISABLED: Remove fake notification generator
-  // This was creating notifications even when no real messages were sent
-  // setInterval(() => {
-  //   // Simulate receiving a new notification (30% chance every interval)
-  //   if (Math.random() > 0.7) {
-  //     const newNotification = generateNotification();
-  //     notifications.value.unshift(newNotification);
-  //     unreadCount.value++;
-      
-  //     // Keep only latest 20 notifications
-  //     if (notifications.value.length > 20) {
-  //       notifications.value = notifications.value.slice(0, 20);
-  //     }
-  //   }
-  // }, 8000); // Check every 8 seconds
+  // Fetch real notifications from API when implemented
 });
 </script>
 
@@ -171,17 +93,14 @@ onMounted(() => {
   <div class="app" :class="{ 
     'student-page': isStudentPage, 
     'dashboard-page': isDashboard,
-    'admin-page': useAdminShell,
     'instructor-page': useInstructorShell,
-    'admin-auth-page': isAdminLoginRoute,
-    'instructor-auth-page': isInstructorLoginRoute
+    'instructor-auth-page': isInstructorLoginRoute,
+    'admin-page': route.path.startsWith('/admin')
   }">
     <!-- Show Header only for public pages (not student, admin, or instructor pages) -->
-    <Header v-if="!isStudentPage && !isAdminPage && !isInstructorPage" />
+    <Header v-if="!isStudentPage && !route.path.startsWith('/admin') && !isInstructorPage" />
     
-    <!-- Admin navbar only when inside authenticated admin area -->
-    <AdminNavbar v-if="useAdminShell" />
-    
+        
     <!-- Instructor sidebar only when inside authenticated instructor area -->
     <InstructorSidebar v-if="useInstructorShell" />
     
@@ -258,8 +177,8 @@ html, body, #app {
   height: 100%;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
-  color: #2d3748;
-  background-color: #f8f9fa;
+  color: #213547;
+  background-color: #ffffff;
   margin: 0;
   padding: 0;
 }
@@ -267,13 +186,13 @@ html, body, #app {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   position: relative;
 }
 
@@ -285,8 +204,7 @@ html, body, #app {
   padding-top: 120px; /* Account for fixed header */
 }
 
-/* Admin and instructor pages - have navbar, so more padding */
-.admin-page .main-content,
+/* Instructor pages - have navbar, so more padding */
 .instructor-page .main-content {
   padding-top: 90px;
 }
@@ -303,6 +221,17 @@ html, body, #app {
   .instructor-page .main-content {
     padding-left: 280px;
   }
+}
+
+/* Only admin pages should have no scrolling */
+.admin-page {
+  overflow: hidden;
+}
+
+.admin-page .main-content {
+  padding-top: 0 !important;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Standalone auth pages: no top nav, full viewport for login */
@@ -496,12 +425,7 @@ html, body, #app {
   margin-bottom: 0; /* No footer margin needed */
 }
 
-/* Admin page specific styles */
-.admin-page .main-content {
-  background: transparent;
-  padding-top: 90px; /* Padding for admin navbar */
-  min-height: calc(100vh - 60px); /* Account for footer */
-}
+
 
 a {
   color: var(--secondary);

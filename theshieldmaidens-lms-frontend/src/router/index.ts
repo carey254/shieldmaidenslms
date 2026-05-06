@@ -381,6 +381,45 @@ const routes: RouteRecordRaw[] = [
     ]
   },
 
+  {
+    path: '/admin/profile',
+    name: 'admin-profile',
+    component: () => import('@/views/admin/AdminWrapper.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/admin/ProfileView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'Profile Settings - The Shield Maidens' }
+      }
+    ]
+  },
+
+  {
+    path: '/admin/security',
+    name: 'admin-security',
+    component: () => import('@/views/admin/AdminWrapper.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/admin/SecurityView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'Security - The Shield Maidens' }
+      }
+    ]
+  },
+
+  {
+    path: '/admin/preferences',
+    name: 'admin-preferences',
+    component: () => import('@/views/admin/AdminWrapper.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/admin/PreferencesView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, title: 'Preferences - The Shield Maidens' }
+      }
+    ]
+  },
+
   // Support routes (public)
 
   {

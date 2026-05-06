@@ -72,114 +72,117 @@
       </nav>
     </aside>
 
-    <!-- Main Content -->
-    <div class="main-content" :class="{ collapsed: sidebarCollapsed }">
-      <!-- Top Bar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <button @click="toggleSidebar" class="mobile-sidebar-toggle">
-            <i class="fas fa-bars"></i>
-          </button>
-          <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Search for users, courses, assignments..."
-              @input="handleSearch"
-            >
-          </div>
-        </div>
-
-        <div class="topbar-right">
-          <!-- Top Navigation -->
-          <nav class="top-nav">
-            <router-link to="/admin/dashboard" class="nav-link" :class="{ active: isActive('/admin/dashboard') }">
-              <i class="fas fa-tachometer-alt"></i>
-              <span>Dashboard</span>
-            </router-link>
-            <router-link to="/admin/users" class="nav-link" :class="{ active: isActive('/admin/users') }">
-              <i class="fas fa-users"></i>
-              <span>Users</span>
-            </router-link>
-            <router-link to="/admin/courses" class="nav-link" :class="{ active: isActive('/admin/courses') }">
-              <i class="fas fa-graduation-cap"></i>
-              <span>Courses</span>
-            </router-link>
-            <router-link to="/admin/opportunities" class="nav-link" :class="{ active: isActive('/admin/opportunities') }">
-              <i class="fas fa-bullhorn"></i>
-              <span>Opportunities</span>
-            </router-link>
-            <router-link to="/admin/analytics" class="nav-link" :class="{ active: isActive('/admin/analytics') }">
-              <i class="fas fa-chart-line"></i>
-              <span>Analytics</span>
-            </router-link>
-            <router-link to="/admin/settings" class="nav-link" :class="{ active: isActive('/admin/settings') }">
-              <i class="fas fa-cog"></i>
-              <span>Settings</span>
-            </router-link>
-          </nav>
-
-          <!-- Date Range Picker -->
-          <div class="date-range">
-            <i class="fas fa-calendar"></i>
-            <span>{{ dateRange }}</span>
-          </div>
-
-          <!-- Notifications -->
-          <div class="notifications" @click="toggleNotifications">
-            <i class="fas fa-bell"></i>
-            <span v-if="unreadNotifications > 0" class="notification-badge">{{ unreadNotifications }}</span>
-          </div>
-
-          <!-- User Profile -->
-          <div class="user-profile" @click="toggleProfileMenu">
-            <img v-if="user?.avatar" :src="user.avatar" :alt="user.name" class="user-avatar">
-            <div v-else class="user-avatar-placeholder">
-              {{ user?.name?.charAt(0)?.toUpperCase() || 'A' }}
-            </div>
-            <div class="user-info">
-              <div class="user-name">{{ user?.name || 'Admin User' }}</div>
-              <div class="user-role">{{ user?.role || 'Administrator' }}</div>
+    <!-- Main Content Wrapper -->
+    <div class="content-wrapper">
+      <!-- Main Content -->
+      <div class="main-content" :class="{ collapsed: sidebarCollapsed }">
+        <!-- Top Bar -->
+        <header class="topbar" :class="{ collapsed: sidebarCollapsed }">
+          <div class="topbar-left">
+            <button @click="toggleSidebar" class="mobile-sidebar-toggle">
+              <i class="fas fa-bars"></i>
+            </button>
+            <div class="search-bar">
+              <i class="fas fa-search"></i>
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Search for users, courses, assignments..."
+                @input="handleSearch"
+              >
             </div>
           </div>
 
-          <!-- Profile Dropdown -->
-          <div v-if="showProfileMenu" class="profile-dropdown">
-            <div class="dropdown-header">
-              <img v-if="user?.avatar" :src="user.avatar" :alt="user.name" class="dropdown-avatar">
-              <div v-else class="dropdown-avatar-placeholder">
+          <div class="topbar-right">
+            <!-- Top Navigation -->
+            <nav class="top-nav">
+              <router-link to="/admin/dashboard" class="nav-link" :class="{ active: isActive('/admin/dashboard') }">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+              </router-link>
+              <router-link to="/admin/users" class="nav-link" :class="{ active: isActive('/admin/users') }">
+                <i class="fas fa-users"></i>
+                <span>Users</span>
+              </router-link>
+              <router-link to="/admin/courses" class="nav-link" :class="{ active: isActive('/admin/courses') }">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Courses</span>
+              </router-link>
+              <router-link to="/admin/opportunities" class="nav-link" :class="{ active: isActive('/admin/opportunities') }">
+                <i class="fas fa-bullhorn"></i>
+                <span>Opportunities</span>
+              </router-link>
+              <router-link to="/admin/analytics" class="nav-link" :class="{ active: isActive('/admin/analytics') }">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+              </router-link>
+              <router-link to="/admin/settings" class="nav-link" :class="{ active: isActive('/admin/settings') }">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+              </router-link>
+            </nav>
+
+            <!-- Date Range Picker -->
+            <div class="date-range">
+              <i class="fas fa-calendar"></i>
+              <span>{{ dateRange }}</span>
+            </div>
+
+            <!-- Notifications -->
+            <div class="notifications" @click="toggleNotifications">
+              <i class="fas fa-bell"></i>
+              <span v-if="unreadNotifications > 0" class="notification-badge">{{ unreadNotifications }}</span>
+            </div>
+
+            <!-- User Profile -->
+            <div class="user-profile" @click="toggleProfileMenu">
+              <img v-if="user?.avatar" :src="user.avatar" :alt="user.name" class="user-avatar">
+              <div v-else class="user-avatar-placeholder">
                 {{ user?.name?.charAt(0)?.toUpperCase() || 'A' }}
               </div>
-              <div class="dropdown-user-info">
-                <h4>{{ user?.name || 'Admin User' }}</h4>
-                <p>{{ user?.email || 'admin@theshieldmaidens.org' }}</p>
-                <span class="role-badge">{{ user?.role || 'Administrator' }}</span>
+              <div class="user-info">
+                <div class="user-name">{{ user?.name || 'Admin User' }}</div>
+                <div class="user-role">{{ user?.role || 'Administrator' }}</div>
               </div>
             </div>
-            <div class="dropdown-menu">
-              <router-link to="/admin/profile" class="menu-item">
-                <i class="fas fa-user"></i> Profile Settings
-              </router-link>
-              <router-link to="/admin/security" class="menu-item">
-                <i class="fas fa-shield-alt"></i> Security
-              </router-link>
-              <router-link to="/admin/preferences" class="menu-item">
-                <i class="fas fa-cog"></i> Preferences
-              </router-link>
-              <div class="menu-divider"></div>
-              <button @click="handleLogout" class="menu-item logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-              </button>
+
+            <!-- Profile Dropdown -->
+            <div v-if="showProfileMenu" class="profile-dropdown">
+              <div class="dropdown-header">
+                <img v-if="user?.avatar" :src="user.avatar" :alt="user.name" class="dropdown-avatar">
+                <div v-else class="dropdown-avatar-placeholder">
+                  {{ user?.name?.charAt(0)?.toUpperCase() || 'A' }}
+                </div>
+                <div class="dropdown-user-info">
+                  <h4>{{ user?.name || 'Admin User' }}</h4>
+                  <p>{{ user?.email || 'admin@theshieldmaidens.org' }}</p>
+                  <span class="role-badge">{{ user?.role || 'Administrator' }}</span>
+                </div>
+              </div>
+              <div class="dropdown-menu">
+                <router-link to="/admin/profile" class="menu-item">
+                  <i class="fas fa-user"></i> Profile Settings
+                </router-link>
+                <router-link to="/admin/security" class="menu-item">
+                  <i class="fas fa-shield-alt"></i> Security
+                </router-link>
+                <router-link to="/admin/preferences" class="menu-item">
+                  <i class="fas fa-cog"></i> Preferences
+                </router-link>
+                <div class="menu-divider"></div>
+                <button @click="handleLogout" class="menu-item logout">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <!-- Page Content -->
-      <main class="page-content">
-        <slot></slot>
-      </main>
+        <!-- Page Content -->
+        <main class="page-content">
+          <slot></slot>
+        </main>
+      </div>
     </div>
 
     <!-- Notifications Dropdown -->
@@ -327,22 +330,30 @@ onUnmounted(() => {
 <style scoped>
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  width: 100%;
+  flex: 1;
   background: #f8f9fa;
+}
+
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 260px;
+  transition: margin-left 0.3s ease;
 }
 
 /* Sidebar */
 .sidebar {
   width: 260px;
   height: 100vh;
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-  color: white;
-  position: fixed;
+  background: #fff8f9fa;
+  color: #333;
+  position: relative;
   left: 0;
   top: 0;
-  overflow-y: auto;
   transition: all 0.3s ease;
-  z-index: 1000;
+  z-index: 999;
 }
 
 .sidebar.collapsed {
@@ -399,21 +410,22 @@ onUnmounted(() => {
   align-items: center;
   gap: 15px;
   padding: 15px 20px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.8);
   text-decoration: none;
   transition: all 0.3s ease;
   position: relative;
+  font-weight: bold;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
 
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.1);
-  border-left: 4px solid #ff6b35;
-  color: white;
+  background: rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #333;
+  color: #333;
 }
 
 .nav-item i {
@@ -423,21 +435,28 @@ onUnmounted(() => {
 }
 
 .nav-text {
-  font-weight: 500;
+  font-weight: bold;
 }
 
 
 /* Main Content */
 .main-content {
   flex: 1;
-  margin-left: 260px;
-  transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
 .main-content.collapsed {
+  margin-left: -190px; /* Adjust for sidebar collapse */
+}
+
+.content-wrapper.collapsed {
   margin-left: 70px;
+}
+
+.topbar.collapsed {
+  left: 70px;
 }
 
 /* Top Bar */
@@ -448,9 +467,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: sticky;
+  position: fixed;
   top: 0;
+  right: 0;
+  left: 260px;
   z-index: 100;
+  transition: left 0.3s ease;
 }
 
 .topbar-left {
@@ -516,7 +538,7 @@ onUnmounted(() => {
   border-radius: 8px;
   text-decoration: none;
   color: #495057;
-  font-weight: 500;
+  font-weight: bold;
   font-size: 0.9rem;
   transition: all 0.3s ease;
   position: relative;
@@ -524,15 +546,15 @@ onUnmounted(() => {
 
 .nav-link:hover {
   background: white;
-  color: #ff6b35;
+  color: #333;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-  color: white;
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-link i {
@@ -552,7 +574,7 @@ onUnmounted(() => {
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  background: white;
+  background: #333;
   border-radius: 50%;
 }
 
@@ -850,8 +872,11 @@ onUnmounted(() => {
 .page-content {
   flex: 1;
   padding: 30px;
-  overflow-y: auto;
+  padding-top: 100px;
+  display: flex;
+  flex-direction: column;
 }
+
 
 /* Responsive Design */
 @media (max-width: 1024px) {
@@ -895,7 +920,6 @@ onUnmounted(() => {
   .top-nav {
     display: none; /* Hide on mobile, use sidebar instead */
   }
-}
   
   .search-bar {
     min-width: 200px;
