@@ -165,6 +165,11 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await login(email, password, { captchaToken: options?.captchaToken, loginAttempts: options?.loginAttempts });
 
       console.log('Login response:', response);
+      console.log('User data:', response.user);
+      console.log('User is_admin:', response.user?.is_admin);
+      console.log('User is_instructor:', response.user?.is_instructor);
+      console.log('User role:', response.user?.role);
+      console.log('User email:', response.user?.email);
 
       if (expectedPortal && !userMatchesPortal(expectedPortal, response.user)) {
         clearLocalAuth();
@@ -195,14 +200,36 @@ export const useAuthStore = defineStore('auth', () => {
       const savedReturn = returnUrl.value;
       returnUrl.value = null;
 
-      let roleDashboard = '/dashboard';
-      if (user.value?.is_admin) roleDashboard = '/admin/dashboard';
-      else if (user.value?.is_instructor || user.value?.email?.includes('instructor@')) roleDashboard = '/instructor/dashboard';
-
-      if (user.value?.is_admin || user.value?.is_instructor || user.value?.email?.includes('instructor@')) {
-        await router.push(savedReturn || roleDashboard);
+      // RESTRICTIVE routing - admin and instructor only access their dashboards
+      console.log('RESTRICTIVE routing check...');
+      console.log('User email:', user.value?.email);
+      console.log('User is_admin:', user.value?.is_admin);
+      console.log('User is_instructor:', user.value?.is_instructor);
+      console.log('User role:', user.value?.role);
+      console.log('Current URL:', window.location.href);
+      
+      let roleDashboard = '/dashboard'; // Default to student
+      
+      // ADMIN ROUTING - most restrictive
+      if (user.value?.email === 'admin@theshieldmaidens.org' || user.value?.is_admin === true) {
+        console.log('ADMIN ACCESS - routing to admin dashboard ONLY');
+        roleDashboard = '/admin/dashboard';
+        await router.push('/admin/dashboard');
         return user.value;
       }
+      
+      // INSTRUCTOR ROUTING - restrictive
+      if (user.value?.email === 'instructor@theshieldmaidens.org' || user.value?.is_instructor === true || user.value?.role === 'instructor') {
+        console.log('INSTRUCTOR ACCESS - routing to instructor dashboard ONLY');
+        roleDashboard = '/instructor/dashboard';
+        await router.push('/instructor/dashboard');
+        return user.value;
+      }
+      
+      // STUDENT ROUTING - fallback only if not admin/instructor
+      console.log('DEFAULT ACCESS - routing to student dashboard');
+      await router.push('/dashboard');
+      return user.value;
 
       const pendingLearnPath = await finalizePendingCourseEnrollment();
 

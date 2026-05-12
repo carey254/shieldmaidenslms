@@ -611,17 +611,10 @@ router.beforeEach((to, from, next) => {
 
   const isInstructor = authStore.isInstructor;
 
-  // Already logged in: do not show login forms again
+  // Already logged in: redirect to appropriate dashboard based on user role
   if (to.meta.loginEntry && isAuthenticated) {
-    if (isAdmin) {
-      next({ name: 'admin-dashboard' });
-      return;
-    }
-    if (isInstructor) {
-      next({ name: 'instructor-dashboard' });
-      return;
-    }
-    next({ name: 'student-dashboard' });
+    // Let the auth store handle routing - don't override here
+    next();
     return;
   }
 
@@ -634,13 +627,9 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.requiresAdmin && !isAdmin) {
-
-    next({ name: 'student-dashboard' }); // Redirect non-admin users to student dashboard
-
+    next({ name: 'login' }); // Redirect non-admin users to login
   } else if (to.meta.requiresInstructor && !isInstructor) {
-
-    next({ name: 'student-dashboard' }); // Redirect non-instructor users to student dashboard
-
+    next({ name: 'login' }); // Redirect non-instructor users to login
   } else if (to.meta.guestOnly && isAuthenticated) {
 
     if (isAdmin) {

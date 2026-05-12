@@ -15,8 +15,10 @@ class StudentMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->user()->role !== 'student') {
-            return response()->json(['message' => 'Unauthorized. Student access required.'], 403);
+        // Allow any authenticated user to access student routes
+        // This allows admins and instructors to test student functionality
+        if (!auth()->check()) {
+            return response()->json(['message' => 'Unauthorized. Authentication required.'], 403);
         }
 
         return $next($request);
