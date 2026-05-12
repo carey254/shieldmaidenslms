@@ -18,12 +18,6 @@ use App\Models\Notification;
 
 class InstructorController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-        $this->middleware('instructor');
-    }
-
     /**
      * Get instructor dashboard statistics
      */

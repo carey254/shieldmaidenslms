@@ -373,6 +373,10 @@ main {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .contact-bar {
+    display: none;
+  }
+
   .contact-info {
     flex-direction: column;
     align-items: flex-start;
@@ -380,19 +384,19 @@ main {
   }
   
   .header {
-    flex-direction: column;
-    padding: 1rem;
-    text-align: center;
+    flex-direction: row;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    min-height: 68px;
+    text-align: left;
   }
   
   .logo {
-    margin-bottom: 1rem;
+    margin-bottom: 0;
   }
   
   .nav-links {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
+    display: none;
   }
 }
 </style>

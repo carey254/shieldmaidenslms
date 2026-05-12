@@ -231,4 +231,158 @@ label {
 .hover\:underline:hover {
   text-decoration: underline;
 }
+
+/* Responsive Design - Mobile First */
+@media (max-width: 767px) {
+  .auth-container {
+    padding: 1rem 0.75rem;
+    padding-top: 70px;
+  }
+  
+  .auth-card {
+    padding: 1.25rem;
+    border-radius: 8px;
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  label {
+    font-size: 0.8rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .form-control {
+    padding: 0.625rem 1rem 0.625rem 2.25rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+  }
+  
+  .input-icon {
+    left: 0.75rem;
+  }
+  
+  .input-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .auth-button {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+  
+  .alert {
+    font-size: 0.8rem;
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 1rem;
+  }
+  
+  .text-center {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 0.5rem 0.25rem;
+    padding-top: 60px;
+  }
+  
+  .auth-card {
+    padding: 1rem;
+    border-radius: 6px;
+  }
+  
+  h1 {
+    font-size: 1.375rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-control {
+    padding: 0.5rem 1rem 0.5rem 2rem;
+    font-size: 0.8rem;
+  }
+  
+  .input-icon {
+    left: 0.5rem;
+  }
+  
+  .input-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .auth-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .alert {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .text-center {
+    font-size: 0.75rem;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .auth-container {
+    padding-top: 50px;
+  }
+  
+  .auth-card {
+    padding: 1rem;
+  }
+  
+  .subtitle {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  }
+  
+  .auth-button:hover {
+    background-color: #4f46e5;
+  }
+  
+  .auth-button:active {
+    transform: scale(0.98);
+  }
+  
+  .text-primary-500:hover {
+    color: #4f46e5;
+  }
+  
+  .text-primary-500:active {
+    color: #3730a3;
+  }
+}
 </style>

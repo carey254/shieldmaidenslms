@@ -493,24 +493,75 @@ onUnmounted(() => {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .admin-sidebar {
-    width: 200px;
+  .admin-layout {
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible;
   }
-  
-  .nav-item-compact {
+
+  .admin-header {
     padding: 8px 12px;
   }
-  
-  .nav-item-compact i {
+
+  .logo-text-mini {
     font-size: 0.8rem;
   }
-  
+
+  .admin-profile span {
+    display: none;
+  }
+
+  .admin-container {
+    flex-direction: column;
+    margin-top: 60px;
+    height: auto;
+    min-height: calc(100dvh - 60px);
+    overflow: visible;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    padding: 8px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-item-compact {
+    flex: 0 0 auto;
+    min-width: 86px;
+    padding: 8px 10px;
+    border-bottom: none;
+    border: 1px solid rgba(73, 80, 87, 0.15);
+  }
+
+  .nav-item-compact i {
+    font-size: 0.85rem;
+  }
+
   .nav-item-compact span {
     font-size: 0.65rem;
+    line-height: 1.2;
   }
-  
+
+  .dropdown-divider {
+    display: none;
+  }
+
   .admin-content {
-    padding: 15px;
+    padding: 12px;
+    overflow: visible;
+  }
+
+  .profile-dropdown {
+    min-width: 260px;
+    right: 0;
   }
 }
 </style>

@@ -357,6 +357,7 @@ onMounted(() => {
   line-height: 1.2;
 }
 
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .navbar-menu {
@@ -364,9 +365,14 @@ onMounted(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+  
   .navbar-container {
     gap: 15px;
+    padding: 0 15px;
   }
   
   .navbar-brand {
@@ -381,6 +387,55 @@ onMounted(() => {
     display: none;
   }
   
+  .navbar-menu {
+    display: block;
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 0 0 12px 12px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    z-index: 999;
+  }
+  
+  .navbar-menu.mobile-open {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .nav-link {
+    display: block;
+    padding: 1rem 20px;
+    border-bottom: 1px solid #f0f0f0;
+    border-radius: 0;
+    margin: 0;
+    transition: background-color 0.2s ease;
+  }
+  
+  .nav-link:hover {
+    background: rgba(0, 0, 0, 0.05);
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .nav-link.active {
+    background: rgba(0, 0, 0, 0.1);
+    border-left: none;
+    border-bottom: 2px solid #333;
+  }
+  
+  .nav-link.active::after {
+    display: none;
+  }
+  
+  .navbar-actions {
+    gap: 10px;
+  }
+  
   .profile-info {
     display: none;
   }
@@ -393,6 +448,104 @@ onMounted(() => {
   .profile-name,
   .profile-role {
     font-size: 0.8rem;
+  }
+  
+  .notification-btn {
+    padding: 6px;
+    font-size: 1rem;
+  }
+  
+  .notification-badge {
+    font-size: 0.6rem;
+    min-width: 16px;
+    padding: 1px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-container {
+    gap: 8px;
+    padding: 0 10px;
+    height: 60px;
+  }
+  
+  .logo-img {
+    height: 35px;
+  }
+  
+  .logo-title {
+    font-size: 0.875rem;
+  }
+  
+  .navbar-menu {
+    top: 60px;
+  }
+  
+  .nav-link {
+    padding: 0.875rem 15px;
+    font-size: 0.875rem;
+  }
+  
+  .mobile-menu-toggle {
+    padding: 6px;
+  }
+  
+  .hamburger-line {
+    width: 20px;
+    height: 2px;
+    margin: 3px 0;
+  }
+  
+  .profile-avatar {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .notification-btn {
+    padding: 4px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .navbar-container {
+    height: 55px;
+  }
+  
+  .navbar-menu {
+    top: 55px;
+  }
+  
+  .nav-link {
+    padding: 0.75rem 15px;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .mobile-menu-toggle:hover {
+    background: none;
+  }
+  
+  .mobile-menu-toggle:active {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  
+  .nav-link:hover {
+    background: none;
+  }
+  
+  .nav-link:active {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .profile-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .profile-btn:active {
+    background: rgba(0, 0, 0, 0.1);
   }
 }
 </style>

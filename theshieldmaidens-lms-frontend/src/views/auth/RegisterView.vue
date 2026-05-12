@@ -57,8 +57,8 @@
         <div class="form-group">
           <label>Security Verification</label>
           <Captcha 
-            @captcha-verified="(verified) => captchaVerified.value = verified"
-            @captcha-changed="(token) => captchaToken.value = token"
+            @captcha-verified="captchaVerified = $event"
+            @captcha-changed="captchaToken = $event"
           />
         </div>
         
@@ -608,5 +608,236 @@ label {
 
 .btn-google:hover {
   background: #f9fafb;
+}
+
+/* Responsive Design - Mobile First */
+@media (max-width: 767px) {
+  .auth-container {
+    padding: 1rem 0.75rem;
+    padding-top: 70px;
+  }
+  
+  .auth-card {
+    padding: 1.25rem;
+    border-radius: 8px;
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  label {
+    font-size: 0.8rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .form-control {
+    padding: 0.625rem 1rem 0.625rem 2.25rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+  }
+  
+  .input-icon {
+    left: 0.75rem;
+  }
+  
+  .input-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .toggle-password {
+    right: 0.75rem;
+    padding: 0.2rem;
+  }
+  
+  .toggle-password svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .error-message {
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+  }
+  
+  .password-strength {
+    font-size: 0.7rem;
+    margin-top: 0.2rem;
+  }
+  
+  .terms-container {
+    margin-bottom: 1rem;
+  }
+  
+  .checkbox-container {
+    font-size: 0.8rem;
+    gap: 0.375rem;
+  }
+  
+  .auth-button {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+  
+  .login-link {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .server-error {
+    font-size: 0.8rem;
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .divider {
+    margin: 1rem 0;
+    font-size: 0.8rem;
+  }
+  
+  .social-login {
+    margin-bottom: 0.375rem;
+  }
+  
+  .btn-google {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 0.5rem 0.25rem;
+    padding-top: 60px;
+  }
+  
+  .auth-card {
+    padding: 1rem;
+    border-radius: 6px;
+  }
+  
+  h1 {
+    font-size: 1.375rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-control {
+    padding: 0.5rem 1rem 0.5rem 2rem;
+    font-size: 0.8rem;
+  }
+  
+  .input-icon {
+    left: 0.5rem;
+  }
+  
+  .input-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .toggle-password {
+    right: 0.5rem;
+  }
+  
+  .toggle-password svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .error-message {
+    font-size: 0.7rem;
+  }
+  
+  .password-strength {
+    font-size: 0.65rem;
+  }
+  
+  .checkbox-container {
+    font-size: 0.75rem;
+  }
+  
+  .auth-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .login-link {
+    font-size: 0.75rem;
+  }
+  
+  .server-error {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .btn-google {
+    padding: 0.425rem 0.75rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .auth-container {
+    padding-top: 50px;
+  }
+  
+  .auth-card {
+    padding: 1rem;
+  }
+  
+  .subtitle {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  }
+  
+  .toggle-password:hover {
+    color: #718096;
+  }
+  
+  .toggle-password:active {
+    color: #4f46e5;
+  }
+  
+  .auth-button:hover {
+    background-color: #4f46e5;
+  }
+  
+  .auth-button:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-google:hover {
+    background: #fff;
+  }
+  
+  .btn-google:active {
+    transform: scale(0.98);
+  }
 }
 </style>

@@ -108,9 +108,12 @@
             </div>
             
             <div class="instructor-card">
-              
+              <div class="instructor-avatar">
+                <div class="avatar-placeholder">SJ</div>
+              </div>
               <div class="instructor-info">
-                
+                <h4>Samuel Jeptoo</h4>
+                <p class="instructor-title">Assistant Instructor - Technical Expert</p>
               </div>
             </div>
           </div>
@@ -1104,7 +1107,352 @@ const startExam = () => {
   background: #45a049;
 }
 
-/* Responsive Design */
+/* Responsive Design - Mobile First */
+@media (max-width: 767px) {
+  .course-learning {
+    padding: 1rem 0.75rem;
+    padding-top: 70px;
+  }
+  
+  .course-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .back-btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+  }
+  
+  .progress-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .progress-overview {
+    padding: 0.75rem;
+  }
+  
+  .progress-percentage {
+    font-size: 1rem;
+  }
+  
+  .progress-bar {
+    height: 8px;
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .stats-column {
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  .stat-card {
+    padding: 0.75rem;
+    min-width: 80px;
+  }
+  
+  .stat-card h3 {
+    font-size: 0.8rem;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .curriculum-column {
+    padding: 0.75rem;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  
+  .weeks-list {
+    gap: 0.75rem;
+  }
+  
+  .week-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  
+  .week-header {
+    gap: 0.75rem;
+  }
+  
+  .week-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .week-info h4 {
+    font-size: 0.9rem;
+  }
+  
+  .week-info p {
+    font-size: 0.8rem;
+  }
+  
+  .week-status {
+    align-items: flex-start;
+  }
+  
+  .status {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+  }
+  
+  .info-column {
+    padding: 0.75rem;
+  }
+  
+  .instructors-section {
+    margin-bottom: 1rem;
+  }
+  
+  .instructors-section h3 {
+    font-size: 1rem;
+  }
+  
+  .instructor-card {
+    padding: 0.75rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .instructor-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .instructor-info h4 {
+    font-size: 0.9rem;
+  }
+  
+  .instructor-info p {
+    font-size: 0.75rem;
+  }
+  
+  .final-exam-section {
+    padding: 0.75rem;
+  }
+  
+  .final-exam-section h3 {
+    font-size: 1rem;
+  }
+  
+  .exam-info {
+    font-size: 0.8rem;
+  }
+  
+  .start-exam-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-learning {
+    padding: 0.5rem 0.25rem;
+    padding-top: 60px;
+  }
+  
+  .course-header {
+    padding: 0.75rem;
+  }
+  
+  .back-btn {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.625rem;
+  }
+  
+  h1 {
+    font-size: 1.25rem;
+  }
+  
+  .progress-section {
+    padding: 0.75rem;
+  }
+  
+  .progress-overview {
+    padding: 0.5rem;
+  }
+  
+  .progress-percentage {
+    font-size: 0.875rem;
+  }
+  
+  .stats-column {
+    flex-direction: row;
+    justify-content: space-around;
+  }
+  
+  .stat-card {
+    padding: 0.5rem;
+    min-width: 100%;
+  }
+  
+  .stat-card h3 {
+    font-size: 0.75rem;
+  }
+  
+  .stat-value {
+    font-size: 1.125rem;
+  }
+  
+  .curriculum-column {
+    padding: 0.5rem;
+  }
+  
+  h2 {
+    font-size: 1.125rem;
+  }
+  
+  .weeks-list {
+    gap: 0.5rem;
+  }
+  
+  .week-item {
+    padding: 0.75rem;
+  }
+  
+  .week-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .week-info h4 {
+    font-size: 0.8rem;
+  }
+  
+  .week-info p {
+    font-size: 0.75rem;
+  }
+  
+  .status {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+  }
+  
+  .info-column {
+    padding: 0.5rem;
+  }
+  
+  .instructors-section h3 {
+    font-size: 0.875rem;
+  }
+  
+  .instructor-card {
+    padding: 0.5rem;
+  }
+  
+  .instructor-avatar {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .instructor-info h4 {
+    font-size: 0.8rem;
+  }
+  
+  .final-exam-section h3 {
+    font-size: 0.875rem;
+  }
+  
+  .exam-info {
+    font-size: 0.75rem;
+  }
+  
+  .start-exam-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .course-learning {
+    padding-top: 50px;
+  }
+  
+  .stats-column {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  
+  .stat-card {
+    min-width: 70px;
+    padding: 0.5rem;
+  }
+  
+  .content-grid {
+    gap: 0.75rem;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .content-grid {
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+  }
+  
+  .stats-column {
+    flex-direction: column;
+  }
+  
+  .week-item {
+    padding: 1.25rem;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .week-item:hover:not(.locked) {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .week-item:active:not(.locked) {
+    transform: scale(0.98);
+  }
+  
+  .back-btn:hover {
+    background: #f8f9fa;
+  }
+  
+  .back-btn:active {
+    background: #e9ecef;
+  }
+  
+  .start-exam-btn:hover {
+    background: #4caf50;
+  }
+  
+  .start-exam-btn:active {
+    transform: scale(0.98);
+  }
+}
+
 @media (max-width: 1200px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -1114,29 +1462,6 @@ const startExam = () => {
   .stats-column {
     flex-direction: row;
     justify-content: space-around;
-  }
-}
-
-@media (max-width: 768px) {
-  .course-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .stats-column {
-    flex-direction: column;
-  }
-  
-  .week-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .instructor-card {
-    flex-direction: column;
-    text-align: center;
   }
 }
 </style>

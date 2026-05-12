@@ -7,9 +7,9 @@
         You are registered successfully. Sign in below with the same email and password you used to create your account.
       </div>
       
-      <!-- Email Input Step -->
-      <div v-if="!emailChecked" class="auth-form">
-        <form @submit.prevent="checkEmail">
+      <!-- Login Form -->
+      <div class="auth-form">
+        <form @submit.prevent="login">
           <div class="form-group">
             <label for="email">Email</label>
             <div class="input-group">
@@ -30,53 +30,12 @@
             </div>
           </div>
           
-          <button 
-            type="submit" 
-            :disabled="isLoading || !email"
-            class="submit-btn"
-          >
-            <span v-if="isLoading">Checking...</span>
-            <span v-else>Continue</span>
-          </button>
-        </form>
-
-        <div v-if="error" class="error-message">
-          {{ error }}
-          <div v-if="isAccountLocked" class="lockout-info">
-            <small>Account temporarily locked for security reasons.</small>
-          </div>
-          <div v-if="error.includes('Network error')" class="error-details">
-            <small>Please ensure:</small>
-            <ul>
-              <li>Backend server is running on 127.0.0.1:8000</li>
-              <li>No firewall blocking the connection</li>
-              <li>CORS is properly configured on backend</li>
-            </ul>
-            <button type="button" @click="testConnection" class="btn btn-sm btn-secondary">Test Connection</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Password Input Step -->
-      <div v-else class="auth-form">
-        <!-- Email Notice -->
-        <div class="email-notice">
-          <div class="email-display">
-            <span class="email-label">Signing in as:</span>
-            <span class="email-value">{{ email }}</span>
-            <button type="button" @click="changeEmail" class="change-email-btn">
-              Change
-            </button>
-          </div>
-        </div>
-        
-        <form @submit.prevent="login">
           <!-- CAPTCHA -->
           <div class="form-group">
             <label>Security Verification</label>
             <Captcha 
-              @captcha-verified="(verified) => captchaVerified.value = verified"
-              @captcha-changed="(token) => captchaToken.value = token"
+              @captcha-verified="console.log('Received captcha-verified event:', $event); captchaVerified = $event"
+              @captcha-changed="console.log('Received captcha-changed event:', $event); captchaToken = $event"
             />
           </div>
           
@@ -101,7 +60,6 @@
                 placeholder="Enter your password"
                 required
                 class="form-control"
-                ref="passwordInput"
               >
               <button type="button" class="toggle-password" @click="togglePasswordVisibility">
               <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -131,14 +89,17 @@
         
         <div v-if="error" class="error-message">
           {{ error }}
+          <div v-if="isAccountLocked" class="lockout-info">
+            <small>Account temporarily locked for security reasons.</small>
+          </div>
           <div v-if="error.includes('Network error')" class="error-details">
             <small>Please ensure:</small>
             <ul>
               <li>Backend server is running on 127.0.0.1:8000</li>
               <li>No firewall blocking the connection</li>
-              <li>CORS is properly configured on the backend</li>
+              <li>CORS is properly configured on backend</li>
             </ul>
-            <button @click="testConnection" class="btn btn-sm btn-secondary">Test Connection</button>
+            <button type="button" @click="testConnection" class="btn btn-sm btn-secondary">Test Connection</button>
           </div>
         </div>
         </form>
@@ -146,13 +107,12 @@
         <div class="divider">
           <span>OR</span>
         </div>
-      </div>
         
-                
         <p class="signup-link">
           Don't have an account? 
           <router-link to="/register">Sign up</router-link>
         </p>
+      </div>
     </div>
   </div>
 </template>
@@ -179,15 +139,15 @@
 }
 
 .auth-container {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/background.jpg') no-repeat center center !important;
   background-size: cover !important;
-  background-attachment: fixed !important;
-  padding: 2rem 1rem;
-  padding-top: 120px;
+  background-attachment: scroll !important;
+  padding: 1rem 0.75rem;
+  padding-top: 80px;
   position: relative !important;
   z-index: 1 !important;
 }
@@ -198,7 +158,7 @@
   background: #FFFFFF;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  padding: 2.5rem;
+  padding: 1.5rem;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -526,17 +486,326 @@ h1 {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-@media (max-width: 480px) {
+/* Responsive Design - Mobile First */
+@media (max-width: 767px) {
+  .auth-container {
+    padding: 0.75rem 0.5rem;
+    padding-top: 70px;
+  }
+  
   .auth-card {
-    padding: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 8px;
   }
   
   h1 {
     font-size: 1.5rem;
+    margin-bottom: 0.5rem;
   }
   
   .subtitle {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .auth-form {
+    margin-top: 1.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group label {
+    font-size: 0.8rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .form-control {
+    padding: 0.75rem 1rem 0.75rem 36px;
+    font-size: 0.875rem;
+    border-radius: 6px;
+  }
+  
+  .input-icon {
+    left: 10px;
+  }
+  
+  .input-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .toggle-password {
+    right: 10px;
+    padding: 0.2rem;
+  }
+  
+  .toggle-password svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .submit-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .email-notice {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+  }
+  
+  .email-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .email-label {
+    font-size: 0.8rem;
+  }
+  
+  .email-value {
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+  
+  .change-email-btn {
+    font-size: 0.8rem;
+    align-self: flex-end;
+  }
+  
+  .remember-me {
+    margin: 1rem 0;
+  }
+  
+  .checkbox-container {
+    font-size: 0.8rem;
+    padding-left: 28px;
+  }
+  
+  .checkmark {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 3px;
+    height: 7px;
+  }
+  
+  .forgot-password {
+    font-size: 0.75rem;
+  }
+  
+  .divider {
+    margin: 1rem 0;
+    font-size: 0.8rem;
+  }
+  
+  .signup-link {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .error-message {
+    font-size: 0.8rem;
+    padding: 0.625rem;
+    margin-top: 0.75rem;
+  }
+  
+  .error-details {
+    font-size: 0.75rem;
+  }
+  
+  .error-details ul {
+    font-size: 0.75rem;
+  }
+  
+  .success-banner {
+    font-size: 0.8rem;
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 1rem;
+  }
+  
+  .lockout-info {
+    font-size: 0.8rem;
+    padding: 0.375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 0.5rem 0.25rem;
+    padding-top: 60px;
+  }
+  
+  .auth-card {
+    padding: 1rem;
+    border-radius: 6px;
+  }
+  
+  h1 {
+    font-size: 1.375rem;
+  }
+  
+  .subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .form-control {
+    padding: 0.625rem 1rem 0.625rem 32px;
+    font-size: 0.8rem;
+  }
+  
+  .input-icon {
+    left: 8px;
+  }
+  
+  .input-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .toggle-password {
+    right: 8px;
+  }
+  
+  .toggle-password svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .submit-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8rem;
+  }
+  
+  .email-notice {
+    padding: 0.5rem;
+  }
+  
+  .email-label {
+    font-size: 0.75rem;
+  }
+  
+  .email-value {
+    font-size: 0.75rem;
+  }
+  
+  .change-email-btn {
+    font-size: 0.75rem;
+  }
+  
+  .checkbox-container {
+    font-size: 0.75rem;
+    padding-left: 24px;
+  }
+  
+  .checkmark {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .checkmark:after {
+    left: 5px;
+    top: 1px;
+    width: 2px;
+    height: 6px;
+  }
+  
+  .forgot-password {
+    font-size: 0.7rem;
+  }
+  
+  .signup-link {
+    font-size: 0.8rem;
+  }
+  
+  .error-message {
+    font-size: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  .error-details {
+    font-size: 0.7rem;
+  }
+  
+  .error-details ul {
+    font-size: 0.7rem;
+  }
+  
+  .success-banner {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .lockout-info {
+    font-size: 0.75rem;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .auth-container {
+    padding-top: 50px;
+  }
+  
+  .auth-card {
+    padding: 1rem;
+  }
+  
+  .subtitle {
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+  }
+  
+  .toggle-password:hover {
+    background: none;
+  }
+  
+  .toggle-password:active {
+    color: #F97316;
+    background-color: rgba(249, 115, 22, 0.1);
+  }
+  
+  .submit-btn:hover:not(:disabled) {
+    transform: none;
+  }
+  
+  .submit-btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  
+  .change-email-btn:hover {
+    color: #0ea5e9;
+  }
+  
+  .change-email-btn:active {
+    color: #0284c7;
+  }
+  
+  .forgot-password:hover {
+    color: #F97316;
+  }
+  
+  .forgot-password:active {
+    color: #EA580C;
   }
 }
 
@@ -674,61 +943,9 @@ const lockoutTime = ref(null);
 const captchaVerified = ref(false);
 const captchaToken = ref('');
 
-// Email-first state
-const emailChecked = ref(false);
-const emailExists = ref(false);
+// Password input reference
 const passwordInput = ref(null);
 
-// Initialize with email input if not pre-filled
-if (!route.query.email) {
-  emailChecked.value = false;
-}
-
-// Email checking function
-const checkEmail = async () => {
-  if (isLoading.value || !email.value) return;
-  
-  error.value = '';
-  isLoading.value = true;
-  
-  try {
-    console.log('Checking email:', email.value);
-    const response = await apiService.checkEmail(email.value);
-    console.log('Email check response:', response);
-    
-    emailExists.value = response.exists;
-
-    if (!response.exists) {
-      // Redirect to signup page
-      router.push('/register');
-      return;
-    }
-
-    // Show password form
-    emailChecked.value = true;
-    nextTick(() => {
-      passwordInput.value?.focus();
-    });
-  } catch (err) {
-    console.error('Email check error:', err);
-    error.value = 'Failed to check email. Please try again.';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Change email function
-const changeEmail = () => {
-  console.log('changeEmail called - resetting to email step');
-  emailChecked.value = false;
-  emailExists.value = false;
-  password.value = '';
-  error.value = '';
-  // Focus on email input
-  nextTick(() => {
-    document.getElementById('email')?.focus();
-  });
-};
 
 const login = async () => {
   if (isLoading.value || isAccountLocked.value) return;
@@ -746,19 +963,9 @@ const login = async () => {
     return;
   }
   
-  // Username validation - max 21 chars, no special chars, no URL
-  if (email.value.length > 21) {
-    error.value = 'Email/Username must be less than 21 characters';
-    return;
-  }
-  
+  // Email validation - keep basic XSS guard, but do not enforce unrealistic length caps
   if (/[<>"'&]/.test(email.value)) {
-    error.value = 'Email/Username contains invalid characters';
-    return;
-  }
-  
-  if (/(https?:\/\/|www\.|\.com|\.net|\.org)/.test(email.value.toLowerCase())) {
-    error.value = 'Email/Username cannot be a URL';
+    error.value = 'Email contains invalid characters';
     return;
   }
   
@@ -769,6 +976,8 @@ const login = async () => {
   }
   
   // CAPTCHA validation
+  console.log('CAPTCHA Check - Verified:', captchaVerified.value);
+  console.log('CAPTCHA Check - Token:', captchaToken.value);
   if (!captchaVerified.value) {
     error.value = 'Please complete the CAPTCHA verification';
     return;
@@ -777,6 +986,8 @@ const login = async () => {
   console.log('Login attempt started...');
   console.log('Email:', email.value);
   console.log('Password:', password.value ? '***' : '');
+  console.log('Captcha Token:', captchaToken.value);
+  console.log('Captcha Verified:', captchaVerified.value);
   
   error.value = '';
   isLoading.value = true;
@@ -861,10 +1072,9 @@ const testConnection = async () => {
 onMounted(async () => {
   const q = { ...route.query };
 
-  // Pre-fill email if coming from email check
+  // Pre-fill email if coming from query params
   if (typeof q.email === 'string') {
     email.value = q.email;
-    emailChecked.value = true;
   }
 
   if (typeof q.redirect === 'string' && q.redirect.startsWith('/')) {
@@ -893,13 +1103,12 @@ onMounted(async () => {
     await router.replace({ path: '/login', query: {} });
   }
 
-  // Pre-fill email if coming from email check
+  // Pre-fill email if coming from query params
   if (typeof q.email === 'string') {
     email.value = q.email;
-    emailChecked.value = true;
   }
 
-  console.log('LoginView mounted, testing API connection...');
-  testConnection();
+  // Avoid noisy automatic connection probes on mount.
+  // Manual "Test Connection" button is still available in error details.
 });
 </script>

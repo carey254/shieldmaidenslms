@@ -34,7 +34,7 @@ const login = async (email: string, password: string, options?: { captchaToken?:
     if (options?.loginAttempts) {
       payload.login_attempts = options.loginAttempts
     }
-    const response = await apiClient.post('/login', payload)
+    const response = await apiClient.post('/secure-login', payload)
     return response.data
   } catch (error) {
     console.error('Login error:', error)

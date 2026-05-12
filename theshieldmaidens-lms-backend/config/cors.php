@@ -36,9 +36,18 @@ return [
         'http://127.0.0.1:5181',
         'http://localhost:57162',
         'http://127.0.0.1:57162',
+        'http://localhost:5200',
+        'http://127.0.0.1:5200',
+        'http://localhost:5201',
+        'http://127.0.0.1:5201',
+        'http://localhost:5202',
+        'http://127.0.0.1:5202',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^http:\/\/localhost:\d+$/',
+        '/^http:\/\/127\.0\.0\.1:\d+$/',
+    ],
 
     'allowed_headers' => ['*'],
 

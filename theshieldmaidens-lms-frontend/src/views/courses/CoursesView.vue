@@ -841,7 +841,7 @@ const enrollCourse = (course) => {
 
 <style scoped>
 .courses-page {
-  padding: 2rem;
+  padding: 1rem;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -853,7 +853,7 @@ const enrollCourse = (course) => {
 
 .courses-header h1 {
   color: #1a365d;
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 1rem;
 }
 
@@ -938,8 +938,8 @@ const enrollCourse = (course) => {
 
 .courses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
 }
 
 .course-card {
@@ -1076,6 +1076,11 @@ const enrollCourse = (course) => {
 .btn-primary:hover {
   background: #2c5282;
   transform: translateY(-1px);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .btn-outline {

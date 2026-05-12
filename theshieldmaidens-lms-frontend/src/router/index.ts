@@ -207,11 +207,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/dashboard',
-    name: 'admin-dashboard',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-dashboard',
         component: () => import('@/views/admin/DashboardView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Admin Dashboard - The Shield Maidens' }
       }
@@ -221,11 +221,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/users',
-    name: 'admin-users',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-users',
         component: () => import('@/views/admin/UsersView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'User Management - The Shield Maidens' }
       }
@@ -235,11 +235,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/facilitators',
-    name: 'admin-facilitators',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-facilitators',
         component: () => import('@/views/admin/FacilitatorsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Facilitators - The Shield Maidens' }
       }
@@ -249,11 +249,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/courses',
-    name: 'admin-courses',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-courses',
         component: () => import('@/views/admin/CoursesView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Course Management - The Shield Maidens' }
       }
@@ -262,11 +262,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/categories',
-    name: 'admin-categories',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-categories',
         component: () => import('@/views/admin/CategoriesView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Categories - The Shield Maidens' }
       }
@@ -275,11 +275,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/enrollments',
-    name: 'admin-enrollments',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-enrollments',
         component: () => import('@/views/admin/EnrollmentsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Enrollments - The Shield Maidens' }
       }
@@ -288,11 +288,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/assignments',
-    name: 'admin-assignments',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-assignments',
         component: () => import('@/views/admin/AssignmentsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Assignments - The Shield Maidens' }
       }
@@ -301,11 +301,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/exams',
-    name: 'admin-exams',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-exams',
         component: () => import('@/views/admin/ExamsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Exams - The Shield Maidens' }
       }
@@ -314,11 +314,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/reports',
-    name: 'admin-reports',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-reports',
         component: () => import('@/views/admin/ReportsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Reports - The Shield Maidens' }
       }
@@ -328,11 +328,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/analytics',
-    name: 'admin-analytics',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-analytics',
         component: () => import('@/views/admin/AnalyticsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Analytics - The Shield Maidens' }
       }
@@ -342,11 +342,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/settings',
-    name: 'admin-settings',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-settings',
         component: () => import('@/views/admin/SettingsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Settings - The Shield Maidens' }
       }
@@ -356,11 +356,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/automation',
-    name: 'admin-automation',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-automation',
         component: () => import('@/views/admin/AutomationView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Automation - The Shield Maidens' }
       }
@@ -370,11 +370,11 @@ const routes: RouteRecordRaw[] = [
   {
 
     path: '/admin/notifications',
-    name: 'admin-notifications',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-notifications',
         component: () => import('@/views/admin/NotificationsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Notifications - The Shield Maidens' }
       }
@@ -383,11 +383,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/profile',
-    name: 'admin-profile',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-profile',
         component: () => import('@/views/admin/ProfileView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Profile Settings - The Shield Maidens' }
       }
@@ -396,11 +396,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/security',
-    name: 'admin-security',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-security',
         component: () => import('@/views/admin/SecurityView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Security - The Shield Maidens' }
       }
@@ -409,11 +409,11 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/admin/preferences',
-    name: 'admin-preferences',
     component: () => import('@/views/admin/AdminWrapper.vue'),
     children: [
       {
         path: '',
+        name: 'admin-preferences',
         component: () => import('@/views/admin/PreferencesView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, title: 'Preferences - The Shield Maidens' }
       }

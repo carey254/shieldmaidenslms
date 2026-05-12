@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { RouterView, useRoute } from 'vue-router';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import Header from '@/components/layout/Header.vue';
 import Footer from '@/components/layout/Footer.vue';
 import UserProfileDropdown from '@/components/layout/UserProfileDropdown.vue';
 import StudentNavbar from '@/components/layout/StudentNavbar.vue';
 import InstructorSidebar from '@/components/layout/InstructorSidebar.vue';
 import { useAuthStore } from '@/stores/auth';
+import mobileInteractions from '@/utils/mobileInteractions';
+import responsiveTest from '@/utils/responsiveTest';
+import GlobalMobileNav from '@/components/layout/GlobalMobileNav.vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -86,6 +89,27 @@ const generateNotification = (title, message, sender = 'System') => {
 // Real-time notifications will be handled by API calls
 onMounted(() => {
   // Fetch real notifications from API when implemented
+  
+  // Listen for mobile sidebar events
+  document.addEventListener('openMobileSidebar', () => {
+    const sidebar = document.querySelector('.left-sidebar');
+    const mobileMenu = document.querySelector('.navbar-menu');
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (mobileMenu) mobileMenu.classList.add('mobile-open');
+  });
+  
+  document.addEventListener('closeMobileSidebar', () => {
+    const sidebar = document.querySelector('.left-sidebar');
+    const mobileMenu = document.querySelector('.navbar-menu');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (mobileMenu) mobileMenu.classList.remove('mobile-open');
+  });
+});
+
+onUnmounted(() => {
+  // Clean up event listeners
+  document.removeEventListener('openMobileSidebar', () => {});
+  document.removeEventListener('closeMobileSidebar', () => {});
 });
 </script>
 
@@ -97,6 +121,9 @@ onMounted(() => {
     'instructor-auth-page': isInstructorLoginRoute,
     'admin-page': route.path.startsWith('/admin')
   }">
+    <!-- Global Mobile Navigation (public + student views only) -->
+    <GlobalMobileNav v-if="!route.path.startsWith('/admin') && !route.path.startsWith('/instructor')" />
+    
     <!-- Show Header only for public pages (not student, admin, or instructor pages) -->
     <Header v-if="!isStudentPage && !route.path.startsWith('/admin') && !isInstructorPage" />
     
@@ -134,11 +161,10 @@ onMounted(() => {
           >
             <div class="notification-content">
               <div class="notification-header-info">
-                <h4>{{ notification.title }}</h4>
-                <span class="notification-sender">{{ notification.sender }}</span>
+                <span class="notification-type">{{ notification.type }}</span>
+                <span class="notification-time">{{ formatTime(notification.created_at) }}</span>
               </div>
-              <p>{{ notification.message }}</p>
-              <span class="notification-time">{{ notification.time }}</span>
+              <p class="notification-message">{{ notification.message }}</p>
             </div>
           </div>
         </div>
@@ -157,7 +183,7 @@ onMounted(() => {
 </template>
 
 <style>
-/* Global styles */
+/* Global styles - Mobile First Approach */
 :root {
   --primary: #1a365d;      /* Navy blue */
   --secondary: #ed8936;    /* Orange */
@@ -165,6 +191,9 @@ onMounted(() => {
   --dark: #2d3748;         /* Dark gray */
   --gray: #718096;         /* Medium gray */
   --light-gray: #e2e8f0;   /* Light gray */
+  --mobile-breakpoint: 768px;
+  --tablet-breakpoint: 1024px;
+  --desktop-breakpoint: 1200px;
 }
 
 * {
@@ -181,19 +210,23 @@ html, body, #app {
   background-color: #ffffff;
   margin: 0;
   padding: 0;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100dvh;
   position: relative;
+  overflow-x: hidden;
 }
 
 .main-content {
@@ -201,7 +234,8 @@ html, body, #app {
   width: 100%;
   position: relative;
   z-index: 1;
-  padding-top: 120px; /* Account for fixed header */
+  padding-top: 60px; /* Reduced for mobile */
+  transition: padding-left 0.3s ease; /* Smooth transition for mobile menu */
 }
 
 /* Instructor pages - have navbar, so more padding */
@@ -214,7 +248,7 @@ html, body, #app {
   padding-top: 24px;
   padding-left: 110px;
   background: #0f1116;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 @media (min-width: 1100px) {
@@ -225,33 +259,33 @@ html, body, #app {
 
 /* Only admin pages should have no scrolling */
 .admin-page {
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .admin-page .main-content {
   padding-top: 0 !important;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 /* Standalone auth pages: no top nav, full viewport for login */
 .admin-auth-page .main-content,
 .instructor-auth-page .main-content {
   padding-top: 0 !important;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Student page specific styles */
 .student-header {
   position: fixed;
   top: 0;
-  right: 20px;
+  right: 10px;
   z-index: 1001;
-  padding: 20px;
+  padding: 15px 10px;
   background: transparent;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
 }
 
 /* Notification Styles */
@@ -291,8 +325,9 @@ html, body, #app {
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  width: 350px;
-  max-height: 400px;
+  width: 90vw;
+  max-width: 350px;
+  max-height: 70vh;
   overflow-y: auto;
   z-index: 1002;
 }
@@ -417,7 +452,7 @@ html, body, #app {
 /* Dashboard specific styles */
 .dashboard-content {
   padding-top: 80px; /* Reduced padding for dashboard since no header */
-  min-height: 100vh; /* Full height without footer */
+  min-height: 100dvh; /* Full height without footer */
 }
 
 .dashboard-page .main-content {
@@ -496,4 +531,148 @@ input, textarea, select {
 .mb-2 { margin-bottom: 1rem; }
 .mb-3 { margin-bottom: 1.5rem; }
 .mb-4 { margin-bottom: 2rem; }
+
+/* Responsive Design - Mobile First */
+@media (max-width: 480px) {
+  .main-content {
+    padding-top: 50px;
+  }
+  
+  .student-header {
+    right: 5px;
+    padding: 10px 5px;
+    gap: 8px;
+  }
+  
+  .notification-bell {
+    font-size: 20px;
+  }
+  
+  .notification-dropdown {
+    width: 95vw;
+    top: 50px;
+  }
+  
+  .student-content {
+    padding-top: 120px;
+  }
+  
+  .dashboard-content {
+    padding-top: 60px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .main-content {
+    padding-top: 55px;
+  }
+  
+  .student-content {
+    padding-top: 125px;
+  }
+  
+  .dashboard-content {
+    padding-top: 65px;
+  }
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    padding-top: 70px;
+  }
+  
+  .student-header {
+    right: 20px;
+    padding: 20px;
+    gap: 15px;
+  }
+  
+  .notification-dropdown {
+    width: 350px;
+  }
+  
+  .student-content {
+    padding-top: 140px;
+  }
+  
+  .dashboard-content {
+    padding-top: 80px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding-top: 90px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .main-content {
+    padding-top: 120px;
+  }
+}
+
+/* Touch-friendly interactions for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .notification-icon:hover {
+    transform: none;
+  }
+  
+  .notification-icon:active {
+    transform: scale(0.95);
+  }
+  
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Mobile menu adjustments for all pages */
+@media (max-width: 767px) {
+  .main-content {
+    padding-left: 0; /* Remove left padding on mobile to prevent overlap */
+  }
+}
+
+/* Prevent content overlap with fixed elements */
+@media (max-width: 767px) {
+  .student-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 60px; /* Make room for hamburger menu */
+    z-index: 1000;
+  }
+  
+  .notification-dropdown {
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    z-index: 1001;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .notification-bell {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .main-content {
+    padding-top: 45px;
+  }
+  
+  .student-content {
+    padding-top: 100px;
+  }
+  
+  .dashboard-content {
+    padding-top: 50px;
+  }
+}
 </style>

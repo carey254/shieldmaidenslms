@@ -53,7 +53,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         // Verify password
-        if (!Hash::check($request->password, $user->password_hash)) {
+        if (!Hash::check($request->password, $user->password)) {
             $this->logLoginAttempt($email, false, $user->id, $ipAddress, $userAgent);
             return back()->withErrors([
                 'password' => 'The provided password is incorrect.',

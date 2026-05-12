@@ -1,7 +1,7 @@
 <template>
   <div class="student-dashboard">
     <!-- LEFT SIDEBAR -->
-    <div class="left-sidebar">
+    <div class="left-sidebar" :class="{ 'mobile-open': mobileSidebarOpen }">
       <div class="logo" @click="goToDashboard">
         <span class="logo-icon">⚡</span>
         <span class="logo-text">Shieldmaidens</span>
@@ -282,6 +282,9 @@ const enrolledCourses = ref([])
 const availableCourses = ref([])
 const isLoading = ref(true)
 
+// Mobile sidebar state
+const mobileSidebarOpen = ref(false)
+
 // Modal states
 const showAccessibility = ref(false)
 const showFAQ = ref(false)
@@ -331,6 +334,16 @@ const faqs = ref([
 
 const handleNavigation = (route: string) => {
   router.push(route)
+  closeMobileSidebar()
+}
+
+// Mobile sidebar functions
+const toggleMobileSidebar = () => {
+  mobileSidebarOpen.value = !mobileSidebarOpen.value
+}
+
+const closeMobileSidebar = () => {
+  mobileSidebarOpen.value = false
 }
 
 // Navigation function for logo
@@ -479,6 +492,55 @@ const handleLogout = async () => {
   background: #f5f5f5;
 }
 
+/* MOBILE MENU TOGGLE */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1001;
+  background: #000000;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: #333333;
+}
+
+/* MOBILE SIDEBAR OVERLAY */
+.mobile-sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.mobile-sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* LEFT SIDEBAR */
 .left-sidebar {
   width: 250px;
@@ -494,6 +556,7 @@ const handleLogout = async () => {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  transition: transform 0.3s ease;
 }
 
 /* Custom scrollbar for sidebar */
@@ -1301,6 +1364,194 @@ input:checked + .slider:before {
   background: #f8f9fa;
   border-radius: 6px;
   transition: background 0.3s;
+}
+
+/* Responsive Design - Mobile First */
+@media (max-width: 767px) {
+  .mobile-menu-toggle {
+    display: flex;
+  }
+  
+  .mobile-sidebar-overlay {
+    display: block;
+  }
+  
+  .left-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .left-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+    padding-top: 80px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+    padding: 0;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .overview-cards {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .overview-card {
+    padding: 20px;
+  }
+  
+  .card-icon {
+    font-size: 28px;
+  }
+  
+  .card-number {
+    font-size: 24px;
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .module-cards {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .module-card {
+    padding: 15px;
+  }
+  
+  .module-icon {
+    font-size: 28px;
+  }
+  
+  .floating-buttons {
+    bottom: 15px;
+    right: 15px;
+    gap: 10px;
+  }
+  
+  .btn-icon {
+    font-size: 28px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+    max-height: 85vh;
+  }
+  
+  .modal-header {
+    padding: 15px;
+  }
+  
+  .modal-header h2 {
+    font-size: 20px;
+  }
+  
+  .modal-body {
+    padding: 15px;
+  }
+  
+  .accessibility-option {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .font-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 10px;
+    padding-top: 70px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .overview-card {
+    padding: 15px;
+  }
+  
+  .card-icon {
+    font-size: 24px;
+  }
+  
+  .card-number {
+    font-size: 20px;
+  }
+  
+  .module-card {
+    padding: 12px;
+  }
+  
+  .floating-buttons {
+    bottom: 10px;
+    right: 10px;
+  }
+  
+  .btn-icon {
+    font-size: 24px;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .main-content {
+    padding-top: 60px;
+  }
+  
+  .overview-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  
+  .overview-card {
+    padding: 12px;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .content-grid {
+    grid-template-columns: 1fr 250px;
+  }
+  
+  .module-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .modal-content {
+    width: 90%;
+    max-width: 500px;
+  }
 }
 
 .faq-question:hover {
