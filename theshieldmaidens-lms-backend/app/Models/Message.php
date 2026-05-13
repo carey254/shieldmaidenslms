@@ -17,10 +17,13 @@ class Message extends Model
         'priority',
         'opened_count',
         'reply_count',
+        'status',
+        'scheduled_at',
     ];
 
     protected $casts = [
         'recipients' => 'array',
+        'scheduled_at' => 'datetime',
     ];
 
     public function sender()

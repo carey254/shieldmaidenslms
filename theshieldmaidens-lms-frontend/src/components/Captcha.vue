@@ -43,9 +43,8 @@ export default {
       this.userInput = ''
       this.error = ''
       const token = this.getToken()
-      console.log('Captcha generated:', this.captchaText)
-      console.log('Captcha token:', token)
       this.$emit('captcha-changed', token)
+      this.$emit('captcha-verified', false)
     },
     
     drawCaptcha() {
@@ -89,17 +88,8 @@ export default {
     
     validateInput() {
       this.error = ''
-      console.log('CAPTCHA Validation:');
-      console.log('  User Input:', this.userInput);
-      console.log('  Expected Text:', this.captchaText);
-      console.log('  Match:', this.userInput === this.captchaText);
-      if (this.userInput === this.captchaText) {
-        console.log('  Emitting captcha-verified: true');
-        this.$emit('captcha-verified', true)
-      } else {
-        console.log('  Emitting captcha-verified: false');
-        this.$emit('captcha-verified', false)
-      }
+      const ok = this.userInput === this.captchaText
+      this.$emit('captcha-verified', ok)
     },
     
     isValid() {

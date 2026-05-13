@@ -1,9 +1,11 @@
 <template>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">NS</div>
+      <div class="brand-mark">
+        <img :src="PUBLIC_BRAND_LOGO" alt="" class="brand-logo" />
+      </div>
       <div class="brand-text">
-        <div class="brand-title">Next Skill</div>
+        <div class="brand-title">Shield Maidens</div>
         <div class="brand-subtitle">Instructor</div>
       </div>
     </div>
@@ -42,6 +44,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,11 +87,16 @@ const logout = async () => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(171, 145, 255, 0.95), rgba(255, 232, 173, 0.85));
-  color: #111;
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.06);
   display: grid;
   place-items: center;
+  overflow: hidden;
+}
+
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
 }
 
 .brand-text {

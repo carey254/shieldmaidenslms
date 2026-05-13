@@ -22,6 +22,7 @@ class Notification extends Model
         'read_at',
         'data',
         'created_by',
+        'status',
     ];
 
     protected $casts = [

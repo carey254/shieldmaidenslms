@@ -102,7 +102,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin routes (require admin role)
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/stats', [AdminController::class, 'getStats']);
+
+        Route::get('/dashboard/top-courses', [AdminController::class, 'dashboardTopCourses']);
+        Route::get('/dashboard/recent-enrollments', [AdminController::class, 'dashboardRecentEnrollments']);
+        Route::get('/dashboard/recent-activities', [AdminController::class, 'dashboardRecentActivities']);
+
         Route::get('/users', [AdminController::class, 'getUsers']);
+        Route::post('/users', [AdminController::class, 'createUser']);
+        Route::put('/users/{userId}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        Route::put('/users/{id}/status', [AdminController::class, 'updateUserStatus']);
+
+        Route::get('/students', [AdminController::class, 'getStudents']);
+
         Route::get('/active-users', [AdminController::class, 'getActiveUsers']);
         Route::get('/activities', [AdminController::class, 'getActivities']);
         Route::get('/requests', [AdminController::class, 'getRequests']);
@@ -110,37 +122,64 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/requests/{id}/deny', [AdminController::class, 'denyRequest']);
         Route::get('/messages', [AdminController::class, 'getMessages']);
         Route::post('/messages/send', [AdminController::class, 'sendMessage']);
+
         Route::get('/courses', [AdminController::class, 'getCourses']);
         Route::post('/courses', [AdminController::class, 'createCourse']);
         Route::patch('/courses/{courseId}', [AdminController::class, 'updateCourse']);
         Route::post('/courses/{courseId}/assign-instructor', [AdminController::class, 'assignInstructor']);
-        Route::get('/opportunities', [AdminController::class, 'getOpportunities']);
-        Route::post('/opportunities', [AdminController::class, 'createOpportunity']);
-        Route::get('/notifications', [AdminController::class, 'getNotifications']);
-        Route::post('/notifications/send', [AdminController::class, 'sendNotification']);
-        Route::post('/meetings', [AdminController::class, 'createMeeting']);
-        Route::put('/meetings/{meetingId}', [AdminController::class, 'updateMeeting']);
-        
-        // Category management
+
         Route::get('/categories', [AdminController::class, 'getCategories']);
         Route::post('/categories', [AdminController::class, 'createCategory']);
         Route::patch('/categories/{categoryId}', [AdminController::class, 'updateCategory']);
         Route::delete('/categories/{categoryId}', [AdminController::class, 'deleteCategory']);
-        
-        // System settings
+
+        Route::get('/facilitators', [AdminController::class, 'getFacilitators']);
+        Route::post('/facilitators', [AdminController::class, 'storeFacilitator']);
+        Route::put('/facilitators/{id}/courses', [AdminController::class, 'updateFacilitatorCourses']);
+        Route::delete('/facilitators/{id}', [AdminController::class, 'destroyFacilitator']);
+
+        Route::get('/assignments', [AdminController::class, 'getAssignments']);
+        Route::post('/assignments', [AdminController::class, 'storeAssignment']);
+        Route::delete('/assignments/{id}', [AdminController::class, 'destroyAssignment']);
+
+        Route::get('/exams', [AdminController::class, 'getExams']);
+        Route::post('/exams', [AdminController::class, 'storeExam']);
+        Route::delete('/exams/{id}', [AdminController::class, 'destroyExam']);
+
+        Route::get('/enrollments', [AdminController::class, 'getEnrollments']);
+        Route::post('/enrollments', [AdminController::class, 'storeEnrollment']);
+        Route::put('/enrollments/{id}/progress', [AdminController::class, 'updateEnrollmentProgress']);
+        Route::delete('/enrollments/{id}', [AdminController::class, 'destroyEnrollment']);
+        Route::get('/enrollments/stats', [AdminController::class, 'getEnrollmentStats']);
+
+        Route::get('/opportunities', [AdminController::class, 'getOpportunities']);
+        Route::post('/opportunities', [AdminController::class, 'createOpportunity']);
+
+        Route::get('/notifications/stats', [AdminController::class, 'getNotificationStats']);
+        Route::get('/notification-templates', [AdminController::class, 'getNotificationTemplates']);
+        Route::get('/notifications', [AdminController::class, 'getNotifications']);
+        Route::post('/notifications', [AdminController::class, 'storeAdminNotification']);
+        Route::delete('/notifications/{id}', [AdminController::class, 'destroyAdminNotification']);
+        Route::post('/notifications/send', [AdminController::class, 'sendNotification']);
+
+        Route::post('/meetings', [AdminController::class, 'createMeeting']);
+        Route::put('/meetings/{meetingId}', [AdminController::class, 'updateMeeting']);
+
         Route::get('/settings', [AdminController::class, 'getSettings']);
         Route::put('/settings', [AdminController::class, 'updateSettings']);
-        
-        // User management
-        Route::post('/users', [AdminController::class, 'createUser']);
-        Route::put('/users/{userId}', [AdminController::class, 'updateUser']);
-        
-        // Enrollment monitoring
-        Route::get('/enrollments/stats', [AdminController::class, 'getEnrollmentStats']);
-        
-        // Announcements
+
         Route::get('/announcements', [AdminController::class, 'getAnnouncements']);
         Route::post('/announcements', [AdminController::class, 'createAnnouncement']);
+        Route::delete('/announcements/{id}', [AdminController::class, 'deleteAnnouncement']);
+
+        Route::get('/reports', [AdminController::class, 'getReports']);
+        Route::post('/reports/generate', [AdminController::class, 'generateReport']);
+        Route::post('/reports/{type}', [AdminController::class, 'showReport']);
+
+        Route::get('/system/status', [AdminController::class, 'systemStatus']);
+        Route::get('/system/logs', [AdminController::class, 'systemLogs']);
+        Route::get('/config', [AdminController::class, 'getConfig']);
+        Route::put('/config', [AdminController::class, 'putConfig']);
     });
 });
 

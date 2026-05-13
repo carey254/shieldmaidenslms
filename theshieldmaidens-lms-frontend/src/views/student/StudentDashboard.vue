@@ -1,10 +1,20 @@
 <template>
   <div class="student-dashboard">
+    <button type="button" class="mobile-menu-toggle" aria-label="Open menu" @click="toggleMobileSidebar">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+    <div
+      class="mobile-sidebar-overlay"
+      :class="{ active: mobileSidebarOpen }"
+      @click="closeMobileSidebar"
+    />
     <!-- LEFT SIDEBAR -->
     <div class="left-sidebar" :class="{ 'mobile-open': mobileSidebarOpen }">
       <div class="logo" @click="goToDashboard">
-        <span class="logo-icon">⚡</span>
-        <span class="logo-text">Shieldmaidens</span>
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-image" />
+        <span class="logo-text">Shield Maidens</span>
       </div>
       
       <nav class="nav-menu">
@@ -272,6 +282,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { apiService } from '@/services/api'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -487,7 +498,10 @@ const handleLogout = async () => {
 <style scoped>
 .student-dashboard {
   display: flex;
-  height: 100vh;
+  min-height: 100dvh;
+  height: auto;
+  max-width: 100vw;
+  overflow-x: hidden;
   font-family: Arial, sans-serif;
   background: #f5f5f5;
 }
@@ -547,7 +561,8 @@ const handleLogout = async () => {
   background: #000000; /* Black background */
   color: white;
   padding: 20px;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100%;
   position: fixed;
   left: 0;
   top: 0;
@@ -598,6 +613,13 @@ const handleLogout = async () => {
   font-size: 18px;
   font-weight: bold;
   color: #ffffff; /* White text on black background */
+}
+
+.logo-image {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .nav-menu {

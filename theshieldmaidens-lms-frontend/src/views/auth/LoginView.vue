@@ -999,17 +999,32 @@ const login = async () => {
     loginAttempts.value++;
     
     // Let backend determine the role based on email/password
-    await authStore.loginAction(email.value, password.value, {
-      captchaToken: captchaToken.value,
-      loginAttempts: loginAttempts.value
-    });
+    console.log('Starting login action...');
+    const portalMeta = route.meta.portal;
+    const portal = typeof portalMeta === 'string' ? portalMeta : undefined;
+
+    const result = await authStore.loginAction(
+      email.value,
+      password.value,
+      {
+        captchaToken: captchaToken.value,
+        loginAttempts: loginAttempts.value,
+      },
+      portal
+    );
+    
+    console.log('Login action completed, result:', result);
     
     // Reset on successful login
     loginAttempts.value = 0;
     isAccountLocked.value = false;
     lockoutTime.value = null;
     
-    // Post-login redirect, pending course enrollment, and returnUrl are handled in the auth store.
+    // If login was successful but no redirect happened, force redirect
+    if (result) {
+      console.log('Login successful, checking if redirect needed...');
+      // The auth store should handle redirect, but if not, we can force it
+    }
   } catch (err) {
     console.error('Login error:', err);
     console.error('Error response:', err.response);

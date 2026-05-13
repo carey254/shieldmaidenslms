@@ -154,9 +154,9 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
         
-        // Apply rate limiting
+        // Apply rate limiting (increased for testing)
         $key = 'login-attempt:' . $request->ip();
-        if (RateLimiter::tooManyAttempts($key, 5)) {
+        if (RateLimiter::tooManyAttempts($key, 20)) {
             return response()->json([
                 'message' => 'Too many login attempts. Please try again later.',
                 'retry_after' => RateLimiter::availableIn($key)

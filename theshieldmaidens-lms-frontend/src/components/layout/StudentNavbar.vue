@@ -2,7 +2,7 @@
   <div class="student-navbar">
     <!-- Logo -->
     <div class="navbar-logo" @click="goToDashboard">
-      <img src="/logo.png" alt="The Shield Maidens" class="logo-image" />
+      <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-image" />
       <span class="logo-text">Learning Management System</span>
     </div>
     
@@ -42,6 +42,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import UserProfileDropdown from './UserProfileDropdown.vue'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
 
 const router = useRouter()
 
@@ -94,12 +95,13 @@ const goToDashboard = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 120px; /* Increased height for larger logo */
+  min-height: 64px;
+  height: auto;
   background: #f8f9fa; /* Cream white background */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30px;
+  padding: 8px 20px;
   z-index: 1000;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid #e9ecef;
@@ -118,15 +120,17 @@ const goToDashboard = () => {
 }
 
 .logo-image {
-  width: 100px;
-  height: 100px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
 }
 
 .logo-text {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: bold;
   color: #ff9900; /* Orange color */
+  max-width: min(52vw, 320px);
+  line-height: 1.25;
 }
 
 .navbar-actions {
@@ -238,16 +242,17 @@ const goToDashboard = () => {
 /* Responsive */
 @media (max-width: 768px) {
   .student-navbar {
-    padding: 0 20px;
+    padding: 8px 12px;
   }
   
   .logo-image {
-    width: 80px;
-    height: 80px;
+    width: 40px;
+    height: 40px;
   }
   
   .logo-text {
-    font-size: 18px;
+    font-size: 13px;
+    max-width: 46vw;
   }
   
   .navbar-actions {

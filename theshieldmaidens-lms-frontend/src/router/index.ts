@@ -38,6 +38,13 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
+    path: '/test-admin',
+    name: 'test-admin',
+    component: () => import('@/views/admin/DashboardView.vue'),
+    meta: { title: 'Test Admin Dashboard' }
+  },
+
+  {
 
     path: '/login',
 
@@ -52,15 +59,23 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/instructor/login',
     name: 'instructor-login',
-    redirect: '/login',
-    meta: { title: 'Instructor Login - The Shield Maidens' }
+    component: LoginView,
+    meta: {
+      title: 'Instructor Login - The Shield Maidens',
+      loginEntry: true,
+      portal: 'instructor',
+    }
   },
 
   {
     path: '/admin/login',
     name: 'admin-login',
-    redirect: '/login',
-    meta: { title: 'Admin Login - The Shield Maidens' }
+    component: LoginView,
+    meta: {
+      title: 'Admin Login - The Shield Maidens',
+      loginEntry: true,
+      portal: 'admin',
+    }
   },
 
   {

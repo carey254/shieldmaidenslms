@@ -4,7 +4,7 @@
       <!-- Logo Section -->
       <div class="navbar-brand">
         <div class="logo-container">
-          <img src="/logo.png" alt="Shield Maidens Logo" class="logo-img" />
+          <img :src="PUBLIC_BRAND_LOGO" alt="Shield Maidens Logo" class="logo-img" />
           <div class="logo-text">
             <span class="logo-title">Shield Maidens</span>
             <span class="logo-subtitle">Learning Management System</span>
@@ -138,6 +138,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
 const router = useRouter();
 const route = useRoute();

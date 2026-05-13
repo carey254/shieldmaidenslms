@@ -40,7 +40,7 @@
     <!-- Main Navigation -->
     <header class="header">
       <div class="logo">
-        <img src="D:\LMS\theshieldmaidens-lms-frontend\public\logo.png" alt="GVRC Gender Violence Recovery Centre" class="logo-img">
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-img">
         <span class="logo-text">Learning Management System</span>
       </div>
       <!-- Navigation for All Users -->
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
 const router = useRouter();
 

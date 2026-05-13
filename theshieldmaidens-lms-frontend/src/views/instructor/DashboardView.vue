@@ -1394,7 +1394,10 @@ onMounted(() => {
 .instructor-dashboard {
   padding: 22px 22px 40px;
   background: #0f1116;
-  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
   color: rgba(255, 255, 255, 0.92);
 }
 

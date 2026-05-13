@@ -4,7 +4,7 @@
       <!-- Logo Section -->
       <div class="navbar-brand">
         <div class="logo-container">
-          <img src="D:\LMS\theshieldmaidens-lms-frontend\public\logo.png" alt="The Shield Maidens" class="logo-img" decoding="async" />
+          <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-img" decoding="async" />
           <div class="logo-text">
             <span class="logo-title">E-learning Management System</span>
             <span class="logo-subtitle">Learning Management System</span>

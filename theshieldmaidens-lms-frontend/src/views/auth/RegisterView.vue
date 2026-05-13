@@ -2,7 +2,7 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="logo-container">
-        
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo" />
       </div>
       
       <h1>Create an Account</h1>
@@ -185,6 +185,7 @@ import { ref, computed, reactive, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { buildGoogleOAuthUrl } from '@/utils/oauth';
 import Captcha from '@/components/Captcha.vue';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
 const name = ref('');
 const email = ref('');

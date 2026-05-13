@@ -23,7 +23,7 @@
     <nav class="mobile-menu-panel" :class="{ 'active': mobileMenuOpen }">
       <div class="mobile-menu-header">
         <div class="mobile-logo">
-          <img src="/logo.png" alt="The Shield Maidens" class="mobile-logo-img">
+          <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="mobile-logo-img">
           <span class="mobile-logo-text">Shieldmaidens</span>
         </div>
         <button class="mobile-close-btn" @click="closeMobileMenu" aria-label="Close menu">
@@ -135,6 +135,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
 
 const router = useRouter()
 const route = useRoute()

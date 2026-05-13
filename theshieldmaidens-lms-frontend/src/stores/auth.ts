@@ -116,9 +116,9 @@ export const useAuthStore = defineStore('auth', () => {
   
   // Getters
   const isAuthenticated = computed(() => !!token.value);
-  const isAdmin = computed(() => !(user.value?.is_admin || user.value?.role === 'admin'));
+  const isAdmin = computed(() => !!(user.value?.is_admin || user.value?.role === 'admin'));
   const isInstructor = computed(
-    () => !(user.value?.is_instructor || user.value?.role === 'instructor' || user.value?.email?.includes('instructor@'))
+    () => !!(user.value?.is_instructor || user.value?.role === 'instructor' || user.value?.email?.includes('instructor@'))
   );
   const isStudent = computed(() => !isAdmin.value && !isInstructor.value);
   const userRole = computed(() => user.value?.role || 'student');
@@ -157,6 +157,22 @@ export const useAuthStore = defineStore('auth', () => {
       return !u.is_admin && !u.is_instructor && !u.email?.includes('instructor@') && (u.role === 'student' || u.role === 'user' || !u.role);
     }
     return true;
+  }
+
+  /** Post-login home route for this user (API user payload). */
+  function resolveRoleDashboard(u: any): string {
+    if (!u) return '/dashboard';
+    if (u.is_admin || u.role === 'admin') return '/admin/dashboard';
+    if (u.is_instructor || u.role === 'instructor') return '/instructor/dashboard';
+    return '/dashboard';
+  }
+
+  /** Only follow a saved ?redirect= if it belongs to that user's area (avoids admin landing on /dashboard). */
+  function returnUrlAllowedForUser(returnPath: string | null, u: any): returnPath is string {
+    if (!returnPath || !returnPath.startsWith('/')) return false;
+    if (u.is_admin || u.role === 'admin') return returnPath.startsWith('/admin');
+    if (u.is_instructor || u.role === 'instructor') return returnPath.startsWith('/instructor');
+    return !returnPath.startsWith('/admin') && !returnPath.startsWith('/instructor');
   }
 
   // Actions
@@ -200,44 +216,25 @@ export const useAuthStore = defineStore('auth', () => {
       const savedReturn = returnUrl.value;
       returnUrl.value = null;
 
-      // RESTRICTIVE routing - admin and instructor only access their dashboards
-      console.log('RESTRICTIVE routing check...');
-      console.log('User email:', user.value?.email);
-      console.log('User is_admin:', user.value?.is_admin);
-      console.log('User is_instructor:', user.value?.is_instructor);
-      console.log('User role:', user.value?.role);
-      console.log('Current URL:', window.location.href);
-      
-      let roleDashboard = '/dashboard'; // Default to student
-      
-      // ADMIN ROUTING - most restrictive
-      if (user.value?.email === 'admin@theshieldmaidens.org' || user.value?.is_admin === true) {
-        console.log('ADMIN ACCESS - routing to admin dashboard ONLY');
-        roleDashboard = '/admin/dashboard';
-        await router.push('/admin/dashboard');
-        return user.value;
-      }
-      
-      // INSTRUCTOR ROUTING - restrictive
-      if (user.value?.email === 'instructor@theshieldmaidens.org' || user.value?.is_instructor === true || user.value?.role === 'instructor') {
-        console.log('INSTRUCTOR ACCESS - routing to instructor dashboard ONLY');
-        roleDashboard = '/instructor/dashboard';
-        await router.push('/instructor/dashboard');
-        return user.value;
-      }
-      
-      // STUDENT ROUTING - fallback only if not admin/instructor
-      console.log('DEFAULT ACCESS - routing to student dashboard');
-      await router.push('/dashboard');
-      return user.value;
+      const roleDashboard = resolveRoleDashboard(user.value);
+      const isStudentUser =
+        !user.value?.is_admin &&
+        user.value?.role !== 'admin' &&
+        user.value?.role !== 'instructor' &&
+        !user.value?.is_instructor;
 
-      const pendingLearnPath = await finalizePendingCourseEnrollment();
+      const pendingLearnPath = isStudentUser ? await finalizePendingCourseEnrollment() : null;
 
+      let destination = roleDashboard;
       if (pendingLearnPath) {
-        await router.push({ path: pendingLearnPath, query: { enrolled: '1' } });
-      } else {
-        await router.push(savedReturn || roleDashboard);
+        destination = pendingLearnPath;
+      } else if (savedReturn && returnUrlAllowedForUser(savedReturn, user.value)) {
+        destination = savedReturn;
       }
+
+      await router.push(
+        pendingLearnPath ? { path: pendingLearnPath, query: { enrolled: '1' } } : destination
+      );
 
       return user.value;
     } catch (error) {

@@ -2,7 +2,7 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="logo-container">
-        <div class="welcome-badge">🔐</div>
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo" />
       </div>
       
       <h1>Change Your Password</h1>
@@ -111,9 +111,11 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import axios from 'axios';
+import { API_BASE_URL } from '@/config/api';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
 const currentPassword = ref('');
 const newPassword = ref('');
@@ -123,10 +125,7 @@ const error = ref('');
 const success = ref('');
 
 const router = useRouter();
-const route = useRoute();
 const authStore = useAuthStore();
-
-const API_BASE_URL = localStorage.getItem('apiBaseUrl') || 'http://localhost:3000/api';
 
 const isFormValid = computed(() => {
   return newPassword.value.length >= 8 &&

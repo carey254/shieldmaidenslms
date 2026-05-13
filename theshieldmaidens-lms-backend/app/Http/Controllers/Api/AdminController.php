@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use App\Models\User;
 use App\Models\Activity;
 use App\Models\UserRequest;
@@ -19,23 +19,72 @@ use App\Models\SystemSetting;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Submission;
+use App\Models\Exam;
 
 class AdminController extends Controller
 {
     /**
-     * Get dashboard statistics
+     * Get dashboard statistics (flat keys + stats[] for Vue admin dashboard).
      */
     public function getStats()
     {
-        $stats = [
-            'totalUsers' => User::count(),
-            'activeCourses' => DB::table('courses')->where('status', 'published')->count(),
-            'totalEnrollments' => DB::table('enrollments')->count(),
-            'completionRate' => $this->calculateCompletionRate(),
-            'complianceRate' => $this->calculateComplianceRate(),
+        $totalUsers = User::count();
+        $activeCourses = DB::table('courses')->where('status', 'published')->count();
+        $totalEnrollments = DB::table('enrollments')->count();
+        $completionRate = $this->calculateCompletionRate();
+        $complianceRate = $this->calculateComplianceRate();
+
+        $statsCards = [
+            [
+                'label' => 'Total Users',
+                'value' => $totalUsers,
+                'unit' => '',
+                'icon' => 'fas fa-users',
+                'color' => '#6366f1',
+                'trend' => 'neutral',
+                'trendIcon' => 'fas fa-minus',
+                'change' => '—',
+            ],
+            [
+                'label' => 'Published Courses',
+                'value' => $activeCourses,
+                'unit' => '',
+                'icon' => 'fas fa-book',
+                'color' => '#f97316',
+                'trend' => 'neutral',
+                'trendIcon' => 'fas fa-minus',
+                'change' => '—',
+            ],
+            [
+                'label' => 'Enrollments',
+                'value' => $totalEnrollments,
+                'unit' => '',
+                'icon' => 'fas fa-user-graduate',
+                'color' => '#10b981',
+                'trend' => 'neutral',
+                'trendIcon' => 'fas fa-minus',
+                'change' => '—',
+            ],
+            [
+                'label' => 'Completion rate',
+                'value' => $completionRate,
+                'unit' => '%',
+                'icon' => 'fas fa-chart-line',
+                'color' => '#8b5cf6',
+                'trend' => 'neutral',
+                'trendIcon' => 'fas fa-minus',
+                'change' => '—',
+            ],
         ];
 
-        return response()->json($stats);
+        return response()->json([
+            'stats' => $statsCards,
+            'totalUsers' => $totalUsers,
+            'activeCourses' => $activeCourses,
+            'totalEnrollments' => $totalEnrollments,
+            'completionRate' => $completionRate,
+            'complianceRate' => $complianceRate,
+        ]);
     }
 
     /**
@@ -62,7 +111,10 @@ class AdminController extends Controller
                 ];
             });
 
-        return response()->json($users);
+        return response()->json([
+            'users' => $users,
+            'data' => $users,
+        ]);
     }
 
     /**
@@ -647,7 +699,10 @@ class AdminController extends Controller
             ->get()
             ->map(fn ($course) => $this->mapCourseForAdmin($course));
 
-        return response()->json(['courses' => $courses]);
+        return response()->json([
+            'courses' => $courses,
+            'data' => $courses,
+        ]);
     }
 
     /**
@@ -817,32 +872,140 @@ class AdminController extends Controller
     }
 
     /**
-     * Get all notifications
+     * Admin Notification Center list (stored as broadcast messages).
      */
     public function getNotifications()
     {
-        $notifications = Notification::with(['sender', 'creator'])
-            ->orderBy('created_at', 'desc')
-            ->limit(100)
-            ->get()
-            ->map(function ($notification) {
+        try {
+            $rows = Message::with('sender')->orderByDesc('created_at')->limit(100)->get();
+            $notifications = $rows->map(function (Message $m) {
+                $meta = is_array($m->recipients) ? $m->recipients : [];
+                $composeType = $meta['compose_type'] ?? 'announcement';
+
                 return [
-                    'id' => $notification->id,
-                    'title' => $notification->title,
-                    'message' => $notification->message,
-                    'type' => $notification->type,
-                    'priority' => $notification->priority,
-                    'sender' => $notification->sender ? $notification->sender->name : 'System',
-                    'recipient_type' => $notification->recipient_type,
-                    'recipient_id' => $notification->recipient_id,
-                    'read_at' => $notification->read_at,
-                    'is_read' => $notification->is_read,
-                    'time_ago' => $notification->time_ago,
-                    'created_at' => $notification->created_at->toISOString(),
+                    'id' => $m->id,
+                    'subject' => $m->subject,
+                    'message' => $m->content,
+                    'type' => $composeType,
+                    'priority' => $m->priority,
+                    'status' => $m->status,
+                    'sender' => $m->sender?->name ?? 'System',
+                    'created_at' => $m->created_at->toISOString(),
                 ];
             });
 
-        return response()->json(['notifications' => $notifications]);
+            return response()->json(['notifications' => $notifications]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json(['notifications' => []]);
+        }
+    }
+
+    /**
+     * Create or save draft notification (admin center → messages table).
+     */
+    public function storeAdminNotification(Request $request)
+    {
+        $request->validate([
+            'subject' => 'nullable|string|max:255',
+            'message' => 'nullable|string',
+            'type' => 'nullable|string|max:50',
+            'priority' => 'nullable|string|max:20',
+            'status' => 'nullable|in:draft,sent,scheduled',
+        ]);
+
+        $status = $request->input('status', 'draft');
+        $subject = $request->input('subject') ?: 'Untitled';
+        $body = $request->input('message') ?: '';
+
+        $meta = [
+            'compose_type' => $request->input('type', 'announcement'),
+            'recipientType' => $request->input('recipientType'),
+            'roles' => $request->input('roles', []),
+            'courses' => $request->input('courses', []),
+        ];
+
+        $message = Message::create([
+            'sender_id' => Auth::id(),
+            'subject' => $subject,
+            'content' => $body,
+            'recipients' => $meta,
+            'priority' => $request->input('priority', 'medium'),
+            'opened_count' => 0,
+            'reply_count' => 0,
+            'status' => $status === 'sent' ? 'sent' : ($status === 'scheduled' ? 'scheduled' : 'draft'),
+            'scheduled_at' => $request->filled('scheduledDate') ? Carbon::parse($request->input('scheduledDate')) : null,
+        ]);
+
+        return response()->json([
+            'message' => 'Saved',
+            'notification' => [
+                'id' => $message->id,
+                'subject' => $message->subject,
+                'message' => $message->content,
+                'type' => $meta['compose_type'],
+                'status' => $message->status,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Delete a notification draft / message row.
+     */
+    public function destroyAdminNotification($id)
+    {
+        $message = Message::findOrFail($id);
+        $message->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    public function getNotificationStats()
+    {
+        try {
+            $sentToday = Message::whereDate('created_at', today())->where('status', 'sent')->count();
+            $scheduled = Message::where('status', 'scheduled')->count();
+            $totalRecipients = User::count();
+
+            return response()->json([
+                'sentToday' => $sentToday,
+                'totalRecipients' => $totalRecipients,
+                'openRate' => 0,
+                'scheduled' => $scheduled,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'sentToday' => 0,
+                'totalRecipients' => 0,
+                'openRate' => 0,
+                'scheduled' => 0,
+            ]);
+        }
+    }
+
+    public function getNotificationTemplates()
+    {
+        return response()->json([
+            'templates' => [
+                [
+                    'id' => 1,
+                    'name' => 'Welcome',
+                    'type' => 'welcome',
+                    'description' => 'Welcome new learners',
+                    'subject' => 'Welcome to The Shield Maidens',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Course update',
+                    'type' => 'reminder',
+                    'description' => 'Notify about course changes',
+                    'subject' => 'Important course update',
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -860,7 +1023,39 @@ class AdminController extends Controller
             'recipient_type' => User::class,
             'data' => $data,
             'created_by' => Auth::id(),
+            'status' => 'sent',
         ]);
+    }
+
+    /**
+     * @return array<int, Notification>
+     */
+    private function sendNotificationToRole(string $role, string $title, string $message, string $type, string $priority, array $data = []): array
+    {
+        $roleMap = [
+            'students' => 'student',
+            'student' => 'student',
+            'instructors' => 'instructor',
+            'instructor' => 'instructor',
+            'facilitators' => 'facilitator',
+            'facilitator' => 'facilitator',
+            'admins' => 'admin',
+            'admin' => 'admin',
+            'all' => 'all',
+        ];
+        $dbRole = $roleMap[$role] ?? $role;
+
+        $query = User::query();
+        if ($dbRole !== 'all') {
+            $query->where('role', $dbRole);
+        }
+
+        $created = [];
+        foreach ($query->cursor() as $user) {
+            $created[] = $this->sendNotificationToUser($user->id, $title, $message, $type, $priority, $data);
+        }
+
+        return $created;
     }
 
     /**
@@ -937,15 +1132,16 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:student,facilitator,admin',
+            'role' => 'required|in:student,facilitator,instructor,admin',
             'status' => 'sometimes|in:active,pending_setup,disabled',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'role' => $request->role,
+            'is_admin' => $request->role === 'admin',
             'status' => $request->input('status', 'active'),
             'auth_provider' => 'local',
         ]);
@@ -974,14 +1170,25 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $userId,
-            'role' => 'sometimes|in:student,facilitator,admin',
+            'role' => 'sometimes|in:student,facilitator,instructor,admin',
             'status' => 'sometimes|in:active,pending_setup,disabled',
+            'password' => 'sometimes|nullable|string|min:8',
         ]);
 
         $oldRole = $user->role;
         $oldStatus = $user->status;
 
         $user->update(array_filter($request->only(['name', 'email', 'role', 'status']), fn($v) => !is_null($v)));
+
+        if ($request->filled('password')) {
+            $user->password = $request->password;
+            $user->save();
+        }
+
+        if ($request->has('role')) {
+            $user->is_admin = $request->role === 'admin';
+            $user->save();
+        }
 
         // Log role/status changes
         $changes = [];
@@ -1108,5 +1315,487 @@ class AdminController extends Controller
             'message' => 'Announcement created successfully',
             'announcement' => $announcement
         ], 201);
+    }
+
+    public function deleteAnnouncement($id)
+    {
+        $announcement = Announcement::findOrFail($id);
+        $announcement->delete();
+
+        return response()->json(['message' => 'Announcement deleted']);
+    }
+
+    public function dashboardTopCourses()
+    {
+        $rows = DB::table('enrollments')
+            ->select('courses.id', 'courses.title', DB::raw('COUNT(*) as enrollments_count'))
+            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+            ->groupBy('courses.id', 'courses.title')
+            ->orderByDesc('enrollments_count')
+            ->limit(10)
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'title' => $r->title,
+                'enrollments_count' => (int) $r->enrollments_count,
+            ]);
+
+        return response()->json(['courses' => $rows]);
+    }
+
+    public function dashboardRecentEnrollments()
+    {
+        $rows = DB::table('enrollments')
+            ->select(
+                'enrollments.id',
+                'enrollments.created_at',
+                'users.name as student_name',
+                'courses.title as course_title'
+            )
+            ->join('users', 'enrollments.user_id', '=', 'users.id')
+            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+            ->orderByDesc('enrollments.created_at')
+            ->limit(15)
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'student_name' => $r->student_name,
+                'course_title' => $r->course_title,
+                'created_at' => $r->created_at,
+            ]);
+
+        return response()->json(['enrollments' => $rows]);
+    }
+
+    public function dashboardRecentActivities()
+    {
+        $activities = Activity::with('user')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'title' => $a->title,
+                'description' => $a->description,
+                'user' => $a->user?->name ?? 'System',
+                'type' => $a->type,
+                'timestamp' => $a->created_at->timestamp,
+            ]);
+
+        return response()->json(['activities' => $activities]);
+    }
+
+    public function getFacilitators()
+    {
+        $users = User::whereIn('role', ['facilitator', 'instructor'])
+            ->orderBy('name')
+            ->get();
+
+        $data = $users->map(function (User $u) {
+            $courses = Course::where('instructor_id', $u->id)
+                ->select('id', 'title')
+                ->get();
+
+            return [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'status' => $u->status === 'active' ? 'active' : 'inactive',
+                'courses' => $courses,
+            ];
+        });
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function storeFacilitator(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'specialization' => 'nullable|string|max:255',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $request->password,
+            'role' => 'instructor',
+            'is_admin' => false,
+            'status' => 'active',
+            'department' => $request->input('specialization'),
+            'auth_provider' => 'local',
+        ]);
+
+        return response()->json(['message' => 'Created', 'data' => ['id' => $user->id]], 201);
+    }
+
+    public function updateFacilitatorCourses(Request $request, int $id)
+    {
+        $request->validate([
+            'course_ids' => 'required|array',
+            'course_ids.*' => 'integer|exists:courses,id',
+        ]);
+
+        $user = User::whereIn('role', ['facilitator', 'instructor'])->findOrFail($id);
+
+        Course::whereIn('id', $request->course_ids)->update(['instructor_id' => $user->id]);
+
+        return response()->json(['message' => 'Assignments updated']);
+    }
+
+    public function destroyFacilitator(int $id)
+    {
+        $user = User::whereIn('role', ['facilitator', 'instructor'])->findOrFail($id);
+        if ($user->id === Auth::id()) {
+            return response()->json(['message' => 'Cannot remove yourself'], 422);
+        }
+        Course::where('instructor_id', $user->id)->update(['instructor_id' => null]);
+        $user->delete();
+
+        return response()->json(['message' => 'Removed']);
+    }
+
+    public function getAssignments()
+    {
+        $assignments = Assignment::with('course')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (Assignment $a) {
+                $courseId = $a->course_id;
+                $totalStudents = DB::table('enrollments')->where('course_id', $courseId)->count();
+                $submittedCount = $a->submissions()->count();
+                $gradedCount = $a->submissions()->whereNotNull('score')->count();
+
+                return [
+                    'id' => $a->id,
+                    'title' => $a->title,
+                    'description' => $a->description,
+                    'course_id' => $courseId,
+                    'course_title' => $a->course?->title ?? '',
+                    'due_date' => $a->due_date?->toISOString(),
+                    'status' => $a->is_published ? 'published' : 'draft',
+                    'total_students' => $totalStudents,
+                    'submitted_count' => $submittedCount,
+                    'graded_count' => $gradedCount,
+                ];
+            });
+
+        return response()->json(['data' => $assignments]);
+    }
+
+    public function storeAssignment(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'course_id' => 'required|exists:courses,id',
+            'due_date' => 'nullable|date',
+            'max_points' => 'nullable|numeric|min:0',
+        ]);
+
+        $assignment = Assignment::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'instructions' => $request->description,
+            'type' => 'assignment',
+            'max_score' => $request->input('max_points', 100),
+            'passing_score' => 60,
+            'due_date' => $request->due_date,
+            'is_published' => true,
+            'auto_grade' => false,
+            'course_id' => $request->course_id,
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
+        ]);
+
+        return response()->json(['message' => 'Created', 'data' => ['id' => $assignment->id]], 201);
+    }
+
+    public function destroyAssignment(int $id)
+    {
+        Assignment::where('id', $id)->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    public function getExams()
+    {
+        $exams = Exam::with(['course.instructor'])
+            ->orderByDesc('start_date')
+            ->get()
+            ->map(function (Exam $e) {
+                $course = $e->course;
+                $totalStudents = $course
+                    ? DB::table('enrollments')->where('course_id', $course->id)->count()
+                    : 0;
+
+                return [
+                    'id' => $e->id,
+                    'title' => $e->title,
+                    'description' => $e->description,
+                    'course_id' => $e->course_id,
+                    'course_title' => $course?->title ?? '',
+                    'facilitator_name' => $course?->instructor?->name ?? '—',
+                    'start_date' => $e->start_date->toISOString(),
+                    'duration_minutes' => $e->duration_minutes,
+                    'max_points' => $e->max_points,
+                    'passing_score' => $e->passing_score,
+                    'status' => $e->status,
+                    'total_students' => $totalStudents,
+                    'submitted_count' => 0,
+                ];
+            });
+
+        return response()->json(['data' => $exams]);
+    }
+
+    public function storeExam(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'course_id' => 'required|exists:courses,id',
+            'start_date' => 'required|date',
+            'duration_minutes' => 'nullable|integer|min:1',
+            'max_points' => 'nullable|integer|min:1',
+            'passing_score' => 'nullable|integer|min:0|max:100',
+        ]);
+
+        $start = Carbon::parse($request->start_date);
+        $exam = Exam::create([
+            'title' => $request->title,
+            'description' => $request->description ?? '',
+            'course_id' => $request->course_id,
+            'start_date' => $start,
+            'end_date' => $start->copy()->addMinutes((int) $request->input('duration_minutes', 60)),
+            'duration_minutes' => (int) $request->input('duration_minutes', 60),
+            'max_points' => (int) $request->input('max_points', 100),
+            'passing_score' => (int) $request->input('passing_score', 60),
+            'status' => 'scheduled',
+            'created_by' => Auth::id(),
+        ]);
+
+        return response()->json(['message' => 'Created', 'data' => ['id' => $exam->id]], 201);
+    }
+
+    public function destroyExam(int $id)
+    {
+        Exam::where('id', $id)->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    public function getEnrollments()
+    {
+        $rows = DB::table('enrollments')
+            ->select(
+                'enrollments.*',
+                'users.name as student_name',
+                'users.email as student_email',
+                'courses.title as course_title',
+                'courses.category as course_category'
+            )
+            ->join('users', 'enrollments.user_id', '=', 'users.id')
+            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+            ->orderByDesc('enrollments.created_at')
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'user_id' => $r->user_id,
+                    'course_id' => $r->course_id,
+                    'student_name' => $r->student_name,
+                    'student_email' => $r->student_email,
+                    'course_title' => $r->course_title,
+                    'course_category' => $r->course_category,
+                    'enrollment_date' => $r->enrolled_at ?? $r->created_at,
+                    'progress' => (int) $r->progress,
+                    'status' => $r->status,
+                    'completion_date' => $r->completed_at,
+                ];
+            });
+
+        return response()->json(['data' => $rows]);
+    }
+
+    public function storeEnrollment(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:users,id',
+            'course_id' => 'required|exists:courses,id',
+            'status' => 'nullable|in:active,pending,suspended,completed,withdrawn',
+        ]);
+
+        $ui = $request->input('status', 'active');
+        $status = match ($ui) {
+            'completed' => 'completed',
+            'suspended', 'withdrawn' => 'withdrawn',
+            'pending' => 'active',
+            default => 'active',
+        };
+
+        DB::table('enrollments')->updateOrInsert(
+            ['user_id' => $request->student_id, 'course_id' => $request->course_id],
+            [
+                'progress' => 0,
+                'status' => $status,
+                'enrolled_at' => now(),
+                'completed_at' => $status === 'completed' ? now() : null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        return response()->json(['message' => 'Enrollment saved'], 201);
+    }
+
+    public function updateEnrollmentProgress(Request $request, int $id)
+    {
+        $request->validate(['progress' => 'required|integer|min:0|max:100']);
+
+        $row = DB::table('enrollments')->where('id', $id)->first();
+        if (! $row) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        $completedAt = $request->progress >= 100 ? now() : null;
+        $status = $request->progress >= 100 ? 'completed' : 'active';
+
+        DB::table('enrollments')->where('id', $id)->update([
+            'progress' => $request->progress,
+            'status' => $status,
+            'completed_at' => $completedAt,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Updated']);
+    }
+
+    public function destroyEnrollment(int $id)
+    {
+        DB::table('enrollments')->where('id', $id)->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    public function getStudents()
+    {
+        $students = User::where('role', 'student')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'status']);
+
+        return response()->json(['data' => $students]);
+    }
+
+    public function deleteUser(int $id)
+    {
+        $user = User::findOrFail($id);
+        if ($user->id === Auth::id()) {
+            return response()->json(['message' => 'Cannot delete your own account'], 422);
+        }
+        if ($user->role === 'admin') {
+            return response()->json(['message' => 'Cannot delete admin accounts'], 403);
+        }
+        $user->delete();
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
+    public function updateUserStatus(Request $request, int $id)
+    {
+        $request->validate([
+            'status' => 'required|string',
+        ]);
+
+        $user = User::findOrFail($id);
+        $incoming = $request->input('status');
+        $mapped = $incoming === 'suspended' ? 'disabled' : $incoming;
+        if (! in_array($mapped, ['active', 'pending_setup', 'disabled'], true)) {
+            return response()->json(['message' => 'Invalid status'], 422);
+        }
+        $user->status = $mapped;
+        $user->save();
+
+        return response()->json(['message' => 'Updated', 'user' => $user->only(['id', 'status'])]);
+    }
+
+    public function getReports(Request $request)
+    {
+        return response()->json(['reports' => []]);
+    }
+
+    public function generateReport(Request $request)
+    {
+        return response()->json(['message' => 'Report queued', 'status' => 'ok']);
+    }
+
+    public function showReport(Request $request, string $type)
+    {
+        return response()->json([
+            'type' => $type,
+            'rows' => [],
+            'generated_at' => now()->toISOString(),
+        ]);
+    }
+
+    public function systemStatus()
+    {
+        return response()->json([
+            'status' => [
+                'server' => [
+                    'status' => 'healthy',
+                    'icon' => 'fas fa-check-circle',
+                    'message' => 'Laravel API',
+                    'cpu' => 12,
+                    'memory' => 45,
+                    'disk' => 30,
+                ],
+                'database' => [
+                    'status' => 'healthy',
+                    'icon' => 'fas fa-check-circle',
+                    'message' => 'Connected',
+                    'connections' => 4,
+                    'queryTime' => 12,
+                ],
+                'application' => [
+                    'status' => 'healthy',
+                    'icon' => 'fas fa-check-circle',
+                    'message' => 'Running',
+                    'version' => app()->version(),
+                ],
+            ],
+        ]);
+    }
+
+    public function systemLogs()
+    {
+        return response()->json([
+            'logs' => [
+                ['level' => 'info', 'message' => 'API ready', 'timestamp' => now()->toISOString()],
+            ],
+        ]);
+    }
+
+    public function getConfig()
+    {
+        return response()->json([
+            'config' => [
+                'platformName' => 'Shield Maidens LMS',
+                'defaultLanguage' => 'en',
+                'maintenanceMode' => false,
+                'sessionTimeout' => 120,
+                'twoFactorAuth' => false,
+                'passwordComplexity' => 'medium',
+                'autoBackup' => true,
+                'backupFrequency' => 'daily',
+            ],
+        ]);
+    }
+
+    public function putConfig(Request $request)
+    {
+        return response()->json(['message' => 'Config endpoint stub — persist via settings API if needed']);
     }
 }

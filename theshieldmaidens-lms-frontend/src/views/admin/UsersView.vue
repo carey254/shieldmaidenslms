@@ -34,16 +34,15 @@
         <select v-model="roleFilter" @change="filterUsers" class="filter-select">
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
-          <option value="instructor">Instructor</option>
+          <option value="instructor">Facilitator</option>
           <option value="student">Student</option>
-          <option value="parent">Parent</option>
         </select>
         
         <select v-model="statusFilter" @change="filterUsers" class="filter-select">
           <option value="">All Status</option>
           <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="suspended">Suspended</option>
+          <option value="pending_setup">Pending setup</option>
+          <option value="disabled">Disabled</option>
         </select>
       </div>
     </div>
@@ -62,11 +61,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in filteredUsers" :key="user.id">
+          <tr v-for="user in paginatedUsers" :key="user.id">
             <td>
               <div class="user-info">
                 <div class="user-avatar">
-                  {{ user.name.charAt(0).toUpperCase() }}
+                  {{ (user.name || '?').charAt(0).toUpperCase() }}
                 </div>
                 <div class="user-details">
                   <div class="user-name">{{ user.name }}</div>
@@ -75,13 +74,13 @@
               </div>
             </td>
             <td>
-              <span class="role-badge" :class="user.role">
-                {{ user.role.charAt(0).toUpperCase() + user.role.slice(1) }}
+              <span class="role-badge" :class="roleBadgeClass(user.role)">
+                {{ formatRoleLabel(user.role) }}
               </span>
             </td>
             <td>
-              <span class="status-badge" :class="user.status">
-                {{ user.status.charAt(0).toUpperCase() + user.status.slice(1) }}
+              <span class="status-badge" :class="statusBadgeClass(user.status)">
+                {{ formatStatusLabel(user.status) }}
               </span>
             </td>
             <td>{{ formatDate(user.created_at) }}</td>
@@ -169,9 +168,8 @@
             <select id="role" v-model="userForm.role" required>
               <option value="">Select Role</option>
               <option value="admin">Admin</option>
-              <option value="instructor">Instructor</option>
+              <option value="instructor">Facilitator</option>
               <option value="student">Student</option>
-              <option value="parent">Parent</option>
             </select>
           </div>
           
@@ -179,8 +177,8 @@
             <label for="status">Status</label>
             <select id="status" v-model="userForm.status" required>
               <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
+              <option value="pending_setup">Pending setup</option>
+              <option value="disabled">Disabled</option>
             </select>
           </div>
           
@@ -191,7 +189,21 @@
               v-model="userForm.password" 
               type="password" 
               required
-              placeholder="Enter password"
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="At least 8 characters"
+            >
+          </div>
+
+          <div class="form-group" v-else>
+            <label for="password-edit">New password</label>
+            <input 
+              id="password-edit"
+              v-model="userForm.password" 
+              type="password" 
+              minlength="8"
+              autocomplete="new-password"
+              placeholder="Leave blank to keep current password"
             >
           </div>
           
@@ -239,12 +251,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { API_BASE_URL } from '@/config/api'
 
-const router = useRouter()
-
-// State
 const users = ref([])
 const searchQuery = ref('')
 const roleFilter = ref('')
@@ -253,14 +262,12 @@ const currentPage = ref(1)
 const itemsPerPage = ref(10)
 const refreshInterval = ref(null)
 
-// Modal states
 const showAddUserModal = ref(false)
 const showEditUserModal = ref(false)
 const showDeleteModal = ref(false)
 const isSaving = ref(false)
 const isDeleting = ref(false)
 
-// Form data
 const userForm = ref({
   id: null,
   name: '',
@@ -272,34 +279,74 @@ const userForm = ref({
 
 const userToDelete = ref(null)
 
-// Computed
+const authHeaders = (json = false) => {
+  const h = {
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+    Accept: 'application/json'
+  }
+  if (json) h['Content-Type'] = 'application/json'
+  return h
+}
+
+const normalizeStatus = (status) => {
+  if (status === 'inactive') return 'pending_setup'
+  if (status === 'suspended') return 'disabled'
+  return status || 'active'
+}
+
+const formatStatusLabel = (status) => {
+  const s = normalizeStatus(status)
+  const map = {
+    active: 'Active',
+    pending_setup: 'Pending setup',
+    disabled: 'Disabled'
+  }
+  return map[s] || String(s || '')
+}
+
+const formatRoleLabel = (role) => {
+  if (role === 'instructor' || role === 'facilitator') return 'Facilitator'
+  if (!role) return ''
+  return role.charAt(0).toUpperCase() + role.slice(1)
+}
+
+const roleBadgeClass = (role) => {
+  if (role === 'facilitator' || role === 'instructor') return 'instructor'
+  return role || 'student'
+}
+
+const statusBadgeClass = (status) => normalizeStatus(status)
+
 const filteredUsers = computed(() => {
   let filtered = users.value
 
-  // Apply search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(user => 
-      user.name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query)
+    filtered = filtered.filter(
+      (user) =>
+        (user.name || '').toLowerCase().includes(query) ||
+        (user.email || '').toLowerCase().includes(query)
     )
   }
 
-  // Apply role filter
   if (roleFilter.value) {
-    filtered = filtered.filter(user => user.role === roleFilter.value)
+    if (roleFilter.value === 'instructor') {
+      filtered = filtered.filter((u) => u.role === 'instructor' || u.role === 'facilitator')
+    } else {
+      filtered = filtered.filter((u) => u.role === roleFilter.value)
+    }
   }
 
-  // Apply status filter
   if (statusFilter.value) {
-    filtered = filtered.filter(user => user.status === statusFilter.value)
+    filtered = filtered.filter((u) => normalizeStatus(u.status) === statusFilter.value)
   }
 
   return filtered
 })
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredUsers.value.length / itemsPerPage.value)
+  const n = filteredUsers.value.length
+  return Math.max(1, Math.ceil(n / itemsPerPage.value))
 })
 
 const paginatedUsers = computed(() => {
@@ -308,20 +355,21 @@ const paginatedUsers = computed(() => {
   return filteredUsers.value.slice(start, end)
 })
 
-// Methods
+watch([filteredUsers, itemsPerPage], () => {
+  const max = Math.max(1, Math.ceil(filteredUsers.value.length / itemsPerPage.value) || 1)
+  if (currentPage.value > max) currentPage.value = max
+})
+
 const loadUsers = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/admin/users', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Accept': 'application/json'
-      }
+    const response = await fetch(`${API_BASE_URL}/admin/users`, {
+      headers: authHeaders(false)
     })
     if (response.ok) {
       const data = await response.json()
-      users.value = data.data || []
+      users.value = data.data || data.users || []
     } else {
-      console.error('Failed to load users')
+      console.error('Failed to load users', response.status)
       users.value = []
     }
   } catch (error) {
@@ -335,7 +383,14 @@ const filterUsers = () => {
 }
 
 const editUser = (user) => {
-  userForm.value = { ...user, password: '' }
+  userForm.value = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role === 'facilitator' ? 'instructor' : user.role,
+    status: normalizeStatus(user.status),
+    password: ''
+  }
   showEditUserModal.value = true
 }
 
@@ -344,55 +399,87 @@ const deleteUser = (user) => {
   showDeleteModal.value = true
 }
 
+const readErrorMessage = async (response) => {
+  try {
+    const j = await response.json()
+    if (j.message) return j.message
+    if (j.errors) {
+      const first = Object.values(j.errors)[0]
+      return Array.isArray(first) ? first[0] : String(first)
+    }
+    return response.statusText
+  } catch {
+    return response.statusText
+  }
+}
+
 const saveUser = async () => {
   isSaving.value = true
-  
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
     if (showEditUserModal.value) {
-      // Update existing user
-      const index = users.value.findIndex(u => u.id === userForm.value.id)
-      if (index !== -1) {
-        users.value[index] = { ...userForm.value }
+      const body = {
+        name: userForm.value.name,
+        email: userForm.value.email,
+        role: userForm.value.role,
+        status: userForm.value.status
+      }
+      if (userForm.value.password && userForm.value.password.length >= 8) {
+        body.password = userForm.value.password
+      }
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userForm.value.id}`, {
+        method: 'PUT',
+        headers: authHeaders(true),
+        body: JSON.stringify(body)
+      })
+      if (!response.ok) {
+        window.alert(await readErrorMessage(response))
+        return
       }
     } else {
-      // Add new user
-      const newUser = {
-        ...userForm.value,
-        id: users.value.length + 1,
-        created_at: new Date().toISOString(),
-        last_active: new Date().toISOString()
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          name: userForm.value.name,
+          email: userForm.value.email,
+          role: userForm.value.role,
+          status: userForm.value.status,
+          password: userForm.value.password
+        })
+      })
+      if (!response.ok) {
+        window.alert(await readErrorMessage(response))
+        return
       }
-      users.value.push(newUser)
     }
-    
+    await loadUsers()
     closeModals()
   } catch (error) {
     console.error('Error saving user:', error)
+    window.alert('Could not save user. Please try again.')
   } finally {
     isSaving.value = false
   }
 }
 
 const confirmDelete = async () => {
+  if (!userToDelete.value) return
   isDeleting.value = true
-  
   try {
-    const response = await fetch(`/api/admin/users/${userToDelete.value.id}`, {
-      method: 'DELETE'
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userToDelete.value.id}`, {
+      method: 'DELETE',
+      headers: authHeaders(false)
     })
-    
     if (response.ok) {
-      users.value = users.value.filter(u => u.id !== userToDelete.value.id)
+      await loadUsers()
       showDeleteModal.value = false
       userToDelete.value = null
     } else {
-      console.error('Failed to delete user')
+      window.alert(await readErrorMessage(response))
     }
   } catch (error) {
     console.error('Error deleting user:', error)
+    window.alert('Could not delete user.')
   } finally {
     isDeleting.value = false
   }
@@ -401,7 +488,6 @@ const confirmDelete = async () => {
 const closeModals = () => {
   showAddUserModal.value = false
   showEditUserModal.value = false
-  showDeleteModal.value = false
   userForm.value = {
     id: null,
     name: '',
@@ -413,19 +499,21 @@ const closeModals = () => {
 }
 
 const formatDate = (dateString) => {
+  if (!dateString) return '—'
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   })
 }
 
 const formatRelativeTime = (dateString) => {
+  if (!dateString) return '—'
   const date = new Date(dateString)
   const now = new Date()
   const diff = now - date
-  
+  if (Number.isNaN(diff)) return '—'
   if (diff < 60000) return 'Just now'
   if (diff < 3600000) return `${Math.floor(diff / 60000)} min ago`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`
@@ -435,8 +523,6 @@ const formatRelativeTime = (dateString) => {
 
 onMounted(() => {
   loadUsers()
-  
-  // Set up real-time refresh every 30 seconds
   refreshInterval.value = setInterval(() => {
     loadUsers()
   }, 30000)
@@ -463,14 +549,23 @@ onUnmounted(() => {
   margin-bottom: 2rem;
 }
 
-.header-content h1 {
+.header-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.header-left h1 {
   color: #1F2937;
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
 }
 
-.header-content p {
+.header-left p {
   color: #6B7280;
   margin: 0;
 }
@@ -575,12 +670,14 @@ onUnmounted(() => {
   background: white;
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin-bottom: 2rem;
 }
 
 .users-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
 }
 
@@ -649,6 +746,8 @@ onUnmounted(() => {
 }
 
 .status-badge.active { background-color: #10B981; color: white; }
+.status-badge.pending_setup { background-color: #6B7280; color: white; }
+.status-badge.disabled { background-color: #EF4444; color: white; }
 .status-badge.inactive { background-color: #6B7280; color: white; }
 .status-badge.suspended { background-color: #EF4444; color: white; }
 

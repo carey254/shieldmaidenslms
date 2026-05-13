@@ -3,7 +3,7 @@
     <div class="footer-content">
       <div class="footer-top">
         <div class="footer-logo" @click="goToDashboard">
-          <img src="D:\LMS\theshieldmaidens-lms-frontend\public\logo.png" alt="GVRC Gender Violence Recovery Centre" class="logo" />
+          <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo" />
           <p>Dedicated to creating safer digital spaces for everyone.</p>
         </div>
         
@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
 const router = useRouter();
 const currentYear = computed(() => new Date().getFullYear());

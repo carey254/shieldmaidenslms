@@ -238,22 +238,36 @@ html, body, #app {
   transition: padding-left 0.3s ease; /* Smooth transition for mobile menu */
 }
 
-/* Instructor pages - have navbar, so more padding */
-.instructor-page .main-content {
-  padding-top: 90px;
-}
-
 /* Instructor pages use left sidebar shell */
 .instructor-page .main-content {
   padding-top: 24px;
   padding-left: 110px;
+  padding-right: 12px;
   background: #0f1116;
   min-height: 100dvh;
+  box-sizing: border-box;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 @media (min-width: 1100px) {
   .instructor-page .main-content {
     padding-left: 280px;
+  }
+}
+
+@media (max-width: 767px) {
+  .instructor-page .main-content {
+    padding-left: 92px;
+    padding-right: 10px;
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .instructor-page .main-content {
+    padding-left: 86px;
+    padding-right: 8px;
   }
 }
 
@@ -440,7 +454,7 @@ html, body, #app {
 }
 
 .student-content {
-  padding-top: 140px; /* Increased padding for taller student navbar */
+  padding-top: 88px;
   flex: 1; /* Take up remaining space to push footer down */
 }
 
@@ -554,7 +568,7 @@ input, textarea, select {
   }
   
   .student-content {
-    padding-top: 120px;
+    padding-top: 76px;
   }
   
   .dashboard-content {
@@ -568,7 +582,7 @@ input, textarea, select {
   }
   
   .student-content {
-    padding-top: 125px;
+    padding-top: 82px;
   }
   
   .dashboard-content {
@@ -592,7 +606,7 @@ input, textarea, select {
   }
   
   .student-content {
-    padding-top: 140px;
+    padding-top: 92px;
   }
   
   .dashboard-content {

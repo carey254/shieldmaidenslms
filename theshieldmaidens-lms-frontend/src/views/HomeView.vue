@@ -4,6 +4,9 @@
     <section class="hero-section">
       <div class="hero-content">
         <div class="hero-left">
+          <div class="hero-brand">
+            <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="hero-logo" />
+          </div>
           <p class="hero-subtitle">Empowering Young People with Digital Safety & Technology Skills</p>
           <div class="cta-buttons">
             <router-link to="/login" class="btn-primary">Sign In to Learn</router-link>
@@ -113,6 +116,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { API_BASE_URL } from '@/config/api';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 import axios from 'axios';
 
 const router = useRouter();
@@ -209,7 +213,10 @@ onMounted(() => {
 
 <style scoped>
 .landing-page {
-  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background: linear-gradient(135deg, #f7fafc 0%, #e2e8f0 100%);
 }
 
@@ -220,7 +227,7 @@ onMounted(() => {
   text-align: center;
   position: relative;
   overflow: hidden;
-  min-height: 100vh;
+  min-height: min(100dvh, 900px);
   display: flex;
   align-items: center;
 }
@@ -261,6 +268,18 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.hero-brand {
+  margin-bottom: 1rem;
+}
+
+.hero-logo {
+  width: min(220px, 72vw);
+  max-height: 72px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.45));
 }
 
 
@@ -331,7 +350,7 @@ onMounted(() => {
 
 .announcements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }

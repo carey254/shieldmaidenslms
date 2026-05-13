@@ -2,7 +2,7 @@
   <div class="auth-container">
     <div class="auth-card">
       <div class="logo-container">
-        <img src="/logo.png" alt="The Shield Maidens" class="logo">
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo">
       </div>
       
       <h1>Reset Your Password</h1>
@@ -52,6 +52,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
 const router = useRouter();
 const API_BASE_URL = localStorage.getItem('apiBaseUrl') || 'http://localhost:3000/api';

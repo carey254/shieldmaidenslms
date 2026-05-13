@@ -4,7 +4,7 @@
     <header class="admin-header">
       <div class="header-left">
         <div class="logo-mini">
-          <img src="D:\LMS\theshieldmaidens-lms-frontend\public\logo.png" alt="The Shield Maidens" class="logo-img-mini" />
+          <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-img-mini" />
           <span class="logo-text-mini">Shield Maidens LMS</span>
         </div>
       </div>
@@ -138,6 +138,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
 
 const router = useRouter()
 const route = useRoute()

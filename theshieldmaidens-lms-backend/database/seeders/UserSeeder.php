@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -14,22 +13,33 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
+        // Create admin user (portal: /admin/login)
         User::create([
             'name' => 'Admin User',
             'email' => 'admin@theshieldmaidens.org',
-            'password' => Hash::make('password'),
+            'password' => 'Admin123',
             'is_admin' => true,
             'role' => 'admin',
             'status' => 'active',
             'department' => 'IT',
         ]);
 
-        // Create instructor user
+        // Create instructor user (portal: /instructor/login)
+        User::create([
+            'name' => 'Portal Instructor',
+            'email' => 'instructor@theshieldmaidens.org',
+            'password' => 'Instructor123',
+            'is_admin' => false,
+            'role' => 'instructor',
+            'status' => 'active',
+            'department' => 'Computer Science',
+        ]);
+
+        // Additional instructor (optional demo account)
         User::create([
             'name' => 'Sarah Johnson',
             'email' => 'sarah@theshieldmaidens.org',
-            'password' => Hash::make('password'),
+            'password' => 'password',
             'is_admin' => false,
             'role' => 'instructor',
             'status' => 'active',
@@ -40,7 +50,7 @@ class UserSeeder extends Seeder
         User::create([
             'name' => 'Caren',
             'email' => 'caren@theshieldmaidens.org',
-            'password' => Hash::make('password'),
+            'password' => 'password',
             'is_admin' => false,
             'role' => 'student',
             'status' => 'active',
@@ -50,7 +60,7 @@ class UserSeeder extends Seeder
         User::create([
             'name' => 'John Doe',
             'email' => 'john@theshieldmaidens.org',
-            'password' => Hash::make('password'),
+            'password' => 'password',
             'is_admin' => false,
             'role' => 'student',
             'status' => 'active',
