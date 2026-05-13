@@ -22,6 +22,10 @@
           <i class="fas fa-book-open"></i>
           My Courses
         </router-link>
+        <router-link to="/instructor/sessions" class="nav-link" :class="{ active: isActive('/instructor/sessions') }">
+          <i class="fas fa-video"></i>
+          Class sessions
+        </router-link>
         <router-link to="/instructor/assessments" class="nav-link" :class="{ active: isActive('/instructor/assessments') }">
           <i class="fas fa-clipboard-check"></i>
           Assessments

@@ -13,6 +13,8 @@ use App\Models\Enrollment;
 use App\Models\Message;
 use App\Models\Opportunity;
 use App\Models\Notification;
+use App\Models\Announcement;
+use App\Models\ClassSession;
 
 class StudentController extends Controller
 {
@@ -357,66 +359,80 @@ class StudentController extends Controller
     }
 
     /**
-     * Get student announcements
+     * Get student announcements (portal + optional course-scoped).
      */
     public function getAnnouncements()
     {
         $student = Auth::user();
-        
-        // Get announcements from enrolled courses
+
         $enrolledCourseIds = DB::table('enrollments')
             ->where('user_id', $student->id)
             ->pluck('course_id');
 
-        $announcements = DB::table('announcements')
-            ->whereIn('course_id', $enrolledCourseIds)
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
+        $rows = Announcement::query()
+            ->active()
+            ->where('show_in_portals', true)
+            ->where(function ($q) {
+                $q->whereIn('audience', ['all', 'students']);
+            })
+            ->where(function ($q) use ($enrolledCourseIds) {
+                $q->whereNull('course_id');
+                if ($enrolledCourseIds->isNotEmpty()) {
+                    $q->orWhereIn('course_id', $enrolledCourseIds);
+                }
+            })
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->limit(80)
             ->get()
-            ->map(function ($announcement) {
-                return [
-                    'id' => $announcement->id,
-                    'title' => $announcement->title,
-                    'content' => $announcement->content,
-                    'course_id' => $announcement->course_id,
-                    'course_name' => DB::table('courses')->where('id', $announcement->course_id)->value('title'),
-                    'instructor' => DB::table('users')->where('id', $announcement->instructor_id)->value('name'),
-                    'created_at' => $announcement->created_at->toISOString(),
-                ];
-            });
+            ->map(fn (Announcement $a) => $a->toPortalArray())
+            ->values()
+            ->all();
 
-        return response()->json(['announcements' => $announcements]);
+        return response()->json($rows);
     }
 
     /**
-     * Get student class sessions
+     * Get student class sessions (live / Google Meet style links).
      */
     public function getSessions()
     {
         $student = Auth::user();
-        
-        // Get sessions from enrolled courses
+
         $enrolledCourseIds = DB::table('enrollments')
             ->where('user_id', $student->id)
             ->pluck('course_id');
 
-        $sessions = DB::table('sessions')
+        if ($enrolledCourseIds->isEmpty()) {
+            return response()->json(['sessions' => []]);
+        }
+
+        $sessions = ClassSession::query()
             ->whereIn('course_id', $enrolledCourseIds)
-            ->orderBy('start_time', 'asc')
-            ->limit(20)
+            ->with(['course:id,title', 'instructor:id,name'])
+            ->orderBy('starts_at')
+            ->limit(40)
             ->get()
-            ->map(function ($session) {
+            ->map(function (ClassSession $s) {
+                $now = now();
+                $status = $s->status;
+                if ($status === 'scheduled' && $s->starts_at && $s->starts_at->lte($now) && ($s->ends_at === null || $s->ends_at->gte($now))) {
+                    $status = 'live';
+                }
+
                 return [
-                    'id' => $session->id,
-                    'title' => $session->title,
-                    'description' => $session->description,
-                    'course_id' => $session->course_id,
-                    'course_name' => DB::table('courses')->where('id', $session->course_id)->value('title'),
-                    'instructor' => DB::table('users')->where('id', $session->instructor_id)->value('name'),
-                    'start_time' => $session->start_time,
-                    'end_time' => $session->end_time,
-                    'meeting_link' => $session->meeting_link,
-                    'status' => $session->status,
+                    'id' => $s->id,
+                    'title' => $s->title,
+                    'description' => $s->description,
+                    'course_id' => $s->course_id,
+                    'course_name' => $s->course?->title,
+                    'instructor' => $s->instructor ? ['name' => $s->instructor->name] : null,
+                    'scheduled_at' => $s->starts_at?->toISOString(),
+                    'duration' => $s->duration_minutes,
+                    'meeting_link' => $s->meeting_link,
+                    'recording_url' => $s->recording_url,
+                    'status' => $status,
                 ];
             });
 

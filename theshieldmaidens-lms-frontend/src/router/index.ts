@@ -20,6 +20,7 @@ import ForgotPasswordView from '@/views/auth/ForgotPasswordView.vue';
 import ChangePasswordView from '@/views/auth/ChangePasswordView.vue';
 import AnnouncementsView from '@/views/student/AnnouncementsView.vue';
 import AdminAnnouncementsView from '@/views/admin/AnnouncementsView.vue';
+import AdminOpportunitiesView from '@/views/admin/OpportunitiesView.vue';
 
 
 
@@ -138,6 +139,18 @@ const routes: RouteRecordRaw[] = [
 
   },
 
+  {
+
+    path: '/admin/opportunities',
+
+    name: 'admin-opportunities',
+
+    component: AdminOpportunitiesView,
+
+    meta: { title: 'Opportunities - The Shield Maidens', requiresAuth: true, requiresAdmin: true }
+
+  },
+
   
   {
 
@@ -194,6 +207,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/instructor/ContentUploadView.vue'),
 
     meta: { requiresAuth: true, requiresInstructor: true, title: 'Upload Content - The Shield Maidens' }
+
+  },
+
+  {
+
+    path: '/instructor/sessions',
+
+    name: 'instructor-sessions',
+
+    component: () => import('@/views/instructor/ClassSessionsView.vue'),
+
+    meta: { requiresAuth: true, requiresInstructor: true, title: 'Class Sessions - The Shield Maidens' }
 
   },
 

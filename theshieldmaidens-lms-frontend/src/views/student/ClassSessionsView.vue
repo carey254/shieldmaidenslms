@@ -159,8 +159,12 @@ const goBack = () => {
 }
 
 const joinSession = (session) => {
-  // TODO: Implement actual session joining logic
-  alert(`Joining session: ${session.title}\nThis will open the meeting link.`)
+  const link = session.meeting_link || session.meeting_url
+  if (link) {
+    window.open(link, '_blank', 'noopener,noreferrer')
+    return
+  }
+  alert('No meeting link is set for this session yet.')
 }
 
 const viewRecording = (session) => {
@@ -198,7 +202,7 @@ onMounted(() => {
 }
 
 .back-btn {
-  background: #000000;
+  background: #334155;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -208,7 +212,7 @@ onMounted(() => {
 }
 
 .back-btn:hover {
-  background: #333333;
+  background: #1e293b;
 }
 
 .page-header h1 {

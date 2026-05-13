@@ -21,6 +21,12 @@ class Announcement extends Model
         'expires_at',
         'views_count',
         'course_id',
+        'category',
+        'priority',
+        'is_featured',
+        'application_link',
+        'show_on_home',
+        'show_in_portals',
         'created_by',
         'updated_by',
     ];
@@ -28,6 +34,9 @@ class Announcement extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'is_pinned' => 'boolean',
+        'is_featured' => 'boolean',
+        'show_on_home' => 'boolean',
+        'show_in_portals' => 'boolean',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
         'views_count' => 'integer',
@@ -97,5 +106,29 @@ class Announcement extends Model
         }
 
         return true;
+    }
+
+    /**
+     * Shape expected by the Vue student/home announcement UIs.
+     */
+    public function toPortalArray(): array
+    {
+        $priority = $this->priority ?: ($this->type === 'urgent' ? 'urgent' : 'medium');
+        $category = $this->category ?: 'general';
+
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'category' => $category,
+            'priority' => $priority,
+            'is_featured' => (bool) $this->is_featured,
+            'is_pinned' => (bool) $this->is_pinned,
+            'application_link' => $this->application_link,
+            'expiry_date' => $this->expires_at?->toISOString(),
+            'created_at' => $this->created_at->toISOString(),
+            'audience' => $this->audience,
+            'type' => $this->type,
+        ];
     }
 }

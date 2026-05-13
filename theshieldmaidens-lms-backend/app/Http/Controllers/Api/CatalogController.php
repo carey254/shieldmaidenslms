@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\Course;
+use App\Models\Opportunity;
 
 class CatalogController extends Controller
 {
@@ -43,6 +45,50 @@ class CatalogController extends Controller
             });
 
         return response()->json(['courses' => $courses]);
+    }
+
+    /**
+     * Public home feed: announcements and opportunities visible to everyone (no auth).
+     */
+    public function homeFeed()
+    {
+        $announcements = Announcement::query()
+            ->active()
+            ->where('show_on_home', true)
+            ->whereIn('audience', ['all', 'students'])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->limit(12)
+            ->get()
+            ->map(fn (Announcement $a) => $a->toPortalArray());
+
+        $opportunities = Opportunity::query()
+            ->active()
+            ->where('deadline', '>', now())
+            ->whereIn('visibility', ['all', 'students'])
+            ->orderBy('deadline')
+            ->limit(8)
+            ->get()
+            ->map(function (Opportunity $o) {
+                return [
+                    'id' => $o->id,
+                    'title' => $o->title,
+                    'description' => $o->description,
+                    'type' => $o->type,
+                    'organization' => $o->organization,
+                    'location' => $o->location,
+                    'deadline' => $o->deadline->format('Y-m-d'),
+                    'application_link' => $o->application_link,
+                    'contact_email' => $o->contact_email,
+                    'created_at' => $o->created_at->toISOString(),
+                ];
+            });
+
+        return response()->json([
+            'announcements' => $announcements,
+            'opportunities' => $opportunities,
+        ]);
     }
 
     /** Placeholder modules until course_modules table ships */

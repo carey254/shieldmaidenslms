@@ -198,8 +198,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
-
-const API_BASE_URL = localStorage.getItem('apiBaseUrl') || 'http://localhost:3000/api';
+import { API_BASE_URL } from '@/config/api';
 
 const newAnnouncement = ref({
   title: '',
@@ -257,12 +256,22 @@ const createAnnouncement = async () => {
   isSubmitting.value = true;
   
   try {
-    const response = await axios.post(`${API_BASE_URL}/admin/announcements`, newAnnouncement.value, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json'
+    const response = await axios.post(
+      `${API_BASE_URL}/admin/announcements`,
+      {
+        ...newAnnouncement.value,
+        audience: 'all',
+        show_on_home: true,
+        show_in_portals: true,
+        expires_at: newAnnouncement.value.expiry_date || null,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
       }
-    });
+    );
     
     // Reset form
     newAnnouncement.value = {
@@ -295,7 +304,7 @@ const fetchAnnouncements = async () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
-    announcements.value = response.data;
+    announcements.value = response.data.announcements || [];
   } catch (error) {
     console.error('Error fetching announcements:', error);
   }

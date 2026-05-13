@@ -134,6 +134,27 @@
 
         <!-- RIGHT SIDEBAR -->
         <div class="right-sidebar">
+          <div v-if="dashboardAnnouncements.length" class="dash-announcements">
+            <h3 class="sidebar-title">Announcements</h3>
+            <ul class="dash-ann-list">
+              <li
+                v-for="a in dashboardAnnouncements"
+                :key="a.id"
+                class="dash-ann-item"
+                @click="handleNavigation('/student/announcements')"
+              >
+                <span class="ann-pill" :class="a.priority">{{ (a.priority || 'info').toUpperCase() }}</span>
+                <div class="dash-ann-body">
+                  <div class="dash-ann-title">{{ a.title }}</div>
+                  <div class="dash-ann-snippet">{{ announcementSnippet(a.content) }}</div>
+                </div>
+              </li>
+            </ul>
+            <button type="button" class="dash-ann-all" @click="handleNavigation('/student/announcements')">
+              View all announcements
+            </button>
+          </div>
+
           <!-- UPCOMING CLASSES -->
           <div class="upcoming-classes">
             <h3 class="sidebar-title">Upcoming Classes</h3>
@@ -280,9 +301,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import { apiService } from '@/services/api'
 import { PUBLIC_BRAND_LOGO } from '@/config/branding'
+import { API_BASE_URL } from '@/config/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -292,6 +315,7 @@ const currentUser = ref(null)
 const enrolledCourses = ref([])
 const availableCourses = ref([])
 const isLoading = ref(true)
+const dashboardAnnouncements = ref<Array<Record<string, unknown>>>([])
 
 // Mobile sidebar state
 const mobileSidebarOpen = ref(false)
@@ -382,6 +406,27 @@ const formatLevel = (level: string | undefined) => {
   return m[level] || level
 }
 
+const announcementSnippet = (html: unknown) => {
+  if (!html || typeof html !== 'string') return ''
+  const plain = html.replace(/<[^>]*>/g, '')
+  return plain.length > 110 ? plain.slice(0, 110) + '…' : plain
+}
+
+const loadAnnouncements = async () => {
+  dashboardAnnouncements.value = []
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const { data } = await axios.get(`${API_BASE_URL}/student/announcements`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const list = Array.isArray(data) ? data : []
+    dashboardAnnouncements.value = list.slice(0, 5) as Array<Record<string, unknown>>
+  } catch {
+    dashboardAnnouncements.value = []
+  }
+}
+
 const loadEnrolledCourses = async () => {
   enrolledCourses.value = []
   availableCourses.value = []
@@ -411,7 +456,7 @@ onMounted(async () => {
 const refreshData = async () => {
   isLoading.value = true
   loadCurrentUser()
-  await loadEnrolledCourses()
+  await Promise.all([loadEnrolledCourses(), loadAnnouncements()])
   isLoading.value = false
 }
 
@@ -1053,6 +1098,75 @@ const handleLogout = async () => {
   display: flex;
   flex-direction: column;
   gap: 30px;
+}
+
+.dash-announcements {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dash-ann-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-ann-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dash-ann-item:last-of-type {
+  border-bottom: none;
+}
+
+.ann-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.ann-pill.urgent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dash-ann-title {
+  font-weight: 600;
+  color: #222;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.dash-ann-snippet {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.dash-ann-all {
+  margin-top: 10px;
+  width: 100%;
+  border: 1px solid #2563eb;
+  background: #fff;
+  color: #2563eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .upcoming-classes,

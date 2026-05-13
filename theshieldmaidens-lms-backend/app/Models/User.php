@@ -73,7 +73,7 @@ class User extends Authenticatable
      */
     public function getIsInstructorAttribute(): bool
     {
-        return $this->role === 'instructor';
+        return $this->role === 'instructor' || $this->role === 'facilitator';
     }
 
     /**

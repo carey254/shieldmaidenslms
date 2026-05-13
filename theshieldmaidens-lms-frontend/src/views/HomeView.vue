@@ -16,14 +16,16 @@
       </div>
     </section>
 
-    <!-- Student Announcements Section -->
-    <section v-if="featuredAnnouncements.length > 0" class="announcements-section">
+    <!-- Public feed: announcements & opportunities (no login required) -->
+    <section v-if="homeAnnouncements.length || homeOpportunities.length" class="announcements-section">
       <div class="container">
-        <h2>📢 Latest Opportunities & Announcements</h2>
-        <div class="announcements-grid">
+        <h2>Latest announcements &amp; opportunities</h2>
+        <p class="feed-lead">Published by our team for learners and the community.</p>
+
+        <div v-if="homeAnnouncements.length" class="announcements-grid">
           <div 
-            v-for="announcement in featuredAnnouncements.slice(0, 3)" 
-            :key="announcement.id"
+            v-for="announcement in homeAnnouncements.slice(0, 3)" 
+            :key="'a-' + announcement.id"
             class="announcement-card"
             :class="{ urgent: announcement.priority === 'urgent' }"
             @click="viewAnnouncement(announcement)"
@@ -33,7 +35,7 @@
                 {{ getCategoryLabel(announcement.category) }}
               </span>
               <span v-if="announcement.priority === 'urgent'" class="urgent-badge">
-                🚨 URGENT
+                URGENT
               </span>
             </div>
             
@@ -43,15 +45,16 @@
             </div>
             
             <div class="announcement-actions">
-              <button @click.stop="viewAnnouncement(announcement)" class="btn btn-outline">
-                Read More
+              <button type="button" @click.stop="viewAnnouncement(announcement)" class="btn btn-outline">
+                Read more
               </button>
               <button 
                 v-if="announcement.application_link && !isExpired(announcement.expiry_date)" 
+                type="button"
                 @click.stop="openApplicationLink(announcement.application_link)" 
                 class="btn btn-primary"
               >
-                Apply Now
+                Apply
               </button>
             </div>
             
@@ -63,10 +66,38 @@
             </div>
           </div>
         </div>
+
+        <div v-if="homeOpportunities.length" class="opportunities-block">
+          <h3 class="opp-heading">Open opportunities</h3>
+          <div class="opportunities-grid">
+            <div
+              v-for="opp in homeOpportunities.slice(0, 3)"
+              :key="'o-' + opp.id"
+              class="opportunity-card"
+            >
+              <div class="opp-type">{{ opp.type }}</div>
+              <h4>{{ opp.title }}</h4>
+              <p class="opp-org">{{ opp.organization }}</p>
+              <p class="opp-meta">Apply by {{ formatDate(opp.deadline) }}</p>
+              <button
+                v-if="opp.application_link"
+                type="button"
+                class="btn btn-primary"
+                @click="openApplicationLink(opp.application_link)"
+              >
+                Learn more
+              </button>
+            </div>
+          </div>
+        </div>
         
         <div class="view-all-section">
-          <router-link to="/student/announcements" class="view-all-btn">
-            View All Announcements
+          <router-link v-if="authStore.token" to="/student/announcements" class="view-all-btn">
+            View all in your portal
+            <i class="fas fa-arrow-right"></i>
+          </router-link>
+          <router-link v-else to="/login" class="view-all-btn">
+            Sign in for the full feed
             <i class="fas fa-arrow-right"></i>
           </router-link>
         </div>
@@ -113,24 +144,25 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { API_BASE_URL } from '@/config/api';
 import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 import axios from 'axios';
 
-const router = useRouter();
 const authStore = useAuthStore();
 
-// Announcements functionality
 const announcements = ref([]);
+const opportunities = ref([]);
 const selectedAnnouncement = ref(null);
 
-const featuredAnnouncements = computed(() => {
-  return announcements.value.filter(announcement => 
-    announcement.is_featured && !isExpired(announcement.expiry_date)
-  );
+const homeAnnouncements = computed(() => {
+  const active = announcements.value.filter((a) => !isExpired(a.expiry_date));
+  const featured = active.filter((a) => a.is_featured);
+  const list = featured.length ? featured : active;
+  return list.slice(0, 6);
 });
+
+const homeOpportunities = computed(() => opportunities.value.slice(0, 6));
 
 const getCategoryLabel = (category) => {
   const labels = {
@@ -165,7 +197,6 @@ const getExcerpt = (content, length = 150) => {
 
 const viewAnnouncement = (announcement) => {
   selectedAnnouncement.value = announcement;
-  // Track view (optional)
   trackView(announcement.id);
 };
 
@@ -187,27 +218,20 @@ const trackView = async (announcementId) => {
   }
 };
 
-const fetchAnnouncements = async () => {
-  if (!authStore.token) {
-    announcements.value = [];
-    return;
-  }
-
+const fetchHomeFeed = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/student/announcements`, {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    });
-    announcements.value = response.data;
+    const { data } = await axios.get(`${API_BASE_URL}/catalog/home-feed`);
+    announcements.value = data.announcements || [];
+    opportunities.value = data.opportunities || [];
   } catch (error) {
-    console.error('Error fetching announcements:', error);
+    console.error('Error fetching home feed:', error);
+    announcements.value = [];
+    opportunities.value = [];
   }
 };
 
-// Fetch announcements on component mount
 onMounted(() => {
-  fetchAnnouncements();
+  fetchHomeFeed();
 });
 </script>
 
@@ -345,7 +369,67 @@ onMounted(() => {
   font-size: 2rem;
   font-weight: 700;
   color: #1f2937;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.feed-lead {
+  text-align: center;
+  color: #6b7280;
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  line-height: 1.5;
+}
+
+.opportunities-block {
+  margin-top: 2.5rem;
+}
+
+.opp-heading {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.opportunities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1.25rem;
+}
+
+.opportunity-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.opp-type {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6366f1;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.opportunity-card h4 {
+  margin: 0 0 0.35rem;
+  color: #111827;
+  font-size: 1.1rem;
+}
+
+.opp-org {
+  margin: 0 0 0.5rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.opp-meta {
+  margin: 0 0 1rem;
+  color: #6b7280;
+  font-size: 0.85rem;
 }
 
 .announcements-grid {

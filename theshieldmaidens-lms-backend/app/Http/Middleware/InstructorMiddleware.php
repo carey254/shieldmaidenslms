@@ -15,8 +15,9 @@ class InstructorMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->user()->role !== 'instructor') {
-            return response()->json(['message' => 'Unauthorized. Instructor access required.'], 403);
+        $role = auth()->user()?->role;
+        if (! in_array($role, ['instructor', 'facilitator'], true)) {
+            return response()->json(['message' => 'Unauthorized. Instructor or facilitator access required.'], 403);
         }
 
         return $next($request);

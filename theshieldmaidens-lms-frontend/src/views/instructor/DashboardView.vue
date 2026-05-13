@@ -1393,12 +1393,12 @@ onMounted(() => {
 <style scoped>
 .instructor-dashboard {
   padding: 22px 22px 40px;
-  background: #0f1116;
+  background: #f4f6fb;
   min-height: 100dvh;
   max-width: 100%;
   overflow-x: hidden;
   box-sizing: border-box;
-  color: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
 }
 
 .dash-top {
@@ -1417,7 +1417,7 @@ onMounted(() => {
 
 .subtitle {
   margin-top: 4px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #64748b;
   font-size: 13px;
 }
 
@@ -1427,9 +1427,9 @@ onMounted(() => {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
   font-size: 12px;
 }
 
@@ -1444,14 +1444,14 @@ onMounted(() => {
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 18px;
   padding: 14px 14px 12px;
 }
 
 .stat-kicker {
-  color: rgba(255, 255, 255, 0.55);
+  color: #64748b;
   font-size: 12px;
   font-weight: 600;
 }
@@ -1473,7 +1473,7 @@ onMounted(() => {
   margin-left: 4px;
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
+  color: #64748b;
 }
 
 .stat-change {
@@ -1490,10 +1490,11 @@ onMounted(() => {
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 22px;
   padding: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .weekly-progress {
@@ -1522,22 +1523,23 @@ onMounted(() => {
 .card-title {
   font-weight: 800;
   letter-spacing: -0.01em;
+  color: #0f172a;
 }
 
 .icon-btn {
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
   cursor: pointer;
 }
 
 .link-btn {
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.68);
+  color: #2563eb;
   cursor: pointer;
   font-weight: 700;
   font-size: 12px;
@@ -1547,15 +1549,15 @@ onMounted(() => {
   display: inline-flex;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   gap: 4px;
 }
 
 .tab {
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.62);
+  color: #64748b;
   padding: 8px 10px;
   border-radius: 999px;
   cursor: pointer;
@@ -1564,8 +1566,8 @@ onMounted(() => {
 }
 
 .tab.active {
-  background: rgba(255, 232, 173, 0.16);
-  color: rgba(255, 232, 173, 0.95);
+  background: #e0e7ff;
+  color: #312e81;
 }
 
 .chart {
@@ -1575,9 +1577,9 @@ onMounted(() => {
   align-items: end;
   gap: 10px;
   padding: 10px 6px 6px;
-  background: rgba(255, 255, 255, 0.02);
+  background: #f8fafc;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid #e2e8f0;
 }
 
 .bar {

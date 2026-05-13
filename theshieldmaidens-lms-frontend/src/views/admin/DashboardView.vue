@@ -1435,25 +1435,41 @@ const addOpportunity = async () => {
 
 const sendAnnouncement = async () => {
   try {
-    const response = await fetch('/api/admin/notifications/send', {
+    const recipients = Array.isArray(newAnnouncement.value.recipients)
+      ? newAnnouncement.value.recipients
+      : [];
+    const audience =
+      recipients.includes('all') || recipients.length === 0
+        ? 'all'
+        : recipients.includes('students') && recipients.includes('instructors')
+          ? 'all'
+          : recipients.includes('students')
+            ? 'students'
+            : recipients.includes('instructors')
+              ? 'facilitators'
+              : 'all';
+
+    const response = await fetch('/api/admin/announcements', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         title: newAnnouncement.value.title,
-        message: newAnnouncement.value.message,
-        type: 'general',
-        priority: newAnnouncement.value.priority,
-        recipients: newAnnouncement.value.recipients
-      })
+        content: newAnnouncement.value.message,
+        audience,
+        priority: newAnnouncement.value.priority || 'medium',
+        category: 'general',
+        show_on_home: true,
+        show_in_portals: true,
+      }),
     });
-    
+
     if (response.ok) {
       showAddAnnouncementModal.value = false;
       newAnnouncement.value = { title: '', message: '', priority: 'medium', recipients: [] };
-      await fetchNotifications();
+      await fetchAnnouncements();
     }
   } catch (error) {
     console.error('Error sending announcement:', error);

@@ -15,6 +15,8 @@ use App\Models\Submission;
 use App\Models\Message;
 use App\Models\Opportunity;
 use App\Models\Notification;
+use App\Models\Announcement;
+use App\Models\ClassSession;
 
 class InstructorController extends Controller
 {
@@ -285,7 +287,9 @@ class InstructorController extends Controller
      */
     public function getOpportunities()
     {
-        $opportunities = Opportunity::visibleTo('instructor')
+        $role = Auth::user()->role;
+
+        $opportunities = Opportunity::visibleTo($role)
             ->active()
             ->upcoming()
             ->orderBy('deadline', 'asc')
@@ -338,5 +342,128 @@ class InstructorController extends Controller
             });
 
         return response()->json(['notifications' => $notifications]);
+    }
+
+    /**
+     * Announcements visible in facilitator / instructor portals.
+     */
+    public function getPortalAnnouncements()
+    {
+        $rows = Announcement::query()
+            ->active()
+            ->where('show_in_portals', true)
+            ->whereIn('audience', ['all', 'facilitators', 'students'])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->limit(60)
+            ->get()
+            ->map(fn (Announcement $a) => $a->toPortalArray())
+            ->values()
+            ->all();
+
+        return response()->json($rows);
+    }
+
+    public function listClassSessions()
+    {
+        $uid = Auth::id();
+        $courseIds = DB::table('courses')->where('instructor_id', $uid)->pluck('id');
+
+        if ($courseIds->isEmpty()) {
+            return response()->json(['sessions' => []]);
+        }
+
+        $sessions = ClassSession::query()
+            ->whereIn('course_id', $courseIds)
+            ->with(['course:id,title'])
+            ->orderBy('starts_at')
+            ->limit(80)
+            ->get()
+            ->map(function (ClassSession $s) {
+                return [
+                    'id' => $s->id,
+                    'course_id' => $s->course_id,
+                    'course_title' => $s->course?->title,
+                    'title' => $s->title,
+                    'description' => $s->description,
+                    'meeting_link' => $s->meeting_link,
+                    'starts_at' => $s->starts_at?->toISOString(),
+                    'ends_at' => $s->ends_at?->toISOString(),
+                    'duration_minutes' => $s->duration_minutes,
+                    'status' => $s->status,
+                    'recording_url' => $s->recording_url,
+                ];
+            });
+
+        return response()->json(['sessions' => $sessions]);
+    }
+
+    public function storeClassSession(Request $request)
+    {
+        $data = $request->validate([
+            'course_id' => 'required|exists:courses,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'meeting_link' => 'nullable|string|max:2048',
+            'starts_at' => 'required|date',
+            'ends_at' => 'nullable|date|after:starts_at',
+            'duration_minutes' => 'nullable|integer|min:5|max:720',
+            'status' => 'sometimes|in:scheduled,live,completed,cancelled',
+        ]);
+
+        $course = Course::findOrFail($data['course_id']);
+        if ((int) $course->instructor_id !== (int) Auth::id()) {
+            return response()->json(['message' => 'You can only schedule sessions for courses assigned to you.'], 403);
+        }
+
+        $session = ClassSession::create([
+            'course_id' => $course->id,
+            'instructor_id' => Auth::id(),
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'meeting_link' => $data['meeting_link'] ?? null,
+            'starts_at' => $data['starts_at'],
+            'ends_at' => $data['ends_at'] ?? null,
+            'duration_minutes' => $data['duration_minutes'] ?? null,
+            'status' => $data['status'] ?? 'scheduled',
+        ]);
+
+        return response()->json(['message' => 'Session created', 'session' => $session], 201);
+    }
+
+    public function updateClassSession(Request $request, int $id)
+    {
+        $session = ClassSession::findOrFail($id);
+        if ((int) $session->instructor_id !== (int) Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $data = $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'meeting_link' => 'nullable|string|max:2048',
+            'starts_at' => 'sometimes|date',
+            'ends_at' => 'nullable|date',
+            'duration_minutes' => 'nullable|integer|min:5|max:720',
+            'status' => 'sometimes|in:scheduled,live,completed,cancelled',
+            'recording_url' => 'nullable|string|max:2048',
+        ]);
+
+        $session->fill($data);
+        $session->save();
+
+        return response()->json(['message' => 'Session updated', 'session' => $session]);
+    }
+
+    public function deleteClassSession(int $id)
+    {
+        $session = ClassSession::findOrFail($id);
+        if ((int) $session->instructor_id !== (int) Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        $session->delete();
+
+        return response()->json(['message' => 'Session deleted']);
     }
 }

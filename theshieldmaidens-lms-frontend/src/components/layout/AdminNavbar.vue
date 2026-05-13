@@ -17,6 +17,9 @@
         <router-link to="/admin/dashboard" class="nav-link" :class="{ active: isActive('/admin/dashboard') }">
           Dashboard
         </router-link>
+        <router-link to="/admin/announcements" class="nav-link" :class="{ active: isActive('/admin/announcements') }">
+          Announcements
+        </router-link>
         <router-link to="/admin/users" class="nav-link" :class="{ active: isActive('/admin/users') }">
           Users
         </router-link>

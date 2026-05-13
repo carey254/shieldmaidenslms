@@ -118,7 +118,12 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value);
   const isAdmin = computed(() => !!(user.value?.is_admin || user.value?.role === 'admin'));
   const isInstructor = computed(
-    () => !!(user.value?.is_instructor || user.value?.role === 'instructor' || user.value?.email?.includes('instructor@'))
+    () => !!(
+      user.value?.is_instructor ||
+      user.value?.role === 'instructor' ||
+      user.value?.role === 'facilitator' ||
+      user.value?.email?.includes('instructor@')
+    )
   );
   const isStudent = computed(() => !isAdmin.value && !isInstructor.value);
   const userRole = computed(() => user.value?.role || 'student');
@@ -151,10 +156,21 @@ export const useAuthStore = defineStore('auth', () => {
       return !!(u.is_admin || u.role === 'admin');
     }
     if (expectedPortal === 'instructor') {
-      return !!(u.is_instructor || u.role === 'instructor' || u.email?.includes('instructor@'));
+      return !!(
+        u.is_instructor ||
+        u.role === 'instructor' ||
+        u.role === 'facilitator' ||
+        u.email?.includes('instructor@')
+      );
     }
     if (expectedPortal === 'student') {
-      return !u.is_admin && !u.is_instructor && !u.email?.includes('instructor@') && (u.role === 'student' || u.role === 'user' || !u.role);
+      return (
+        !u.is_admin &&
+        u.role !== 'facilitator' &&
+        !u.is_instructor &&
+        !u.email?.includes('instructor@') &&
+        (u.role === 'student' || u.role === 'user' || !u.role)
+      );
     }
     return true;
   }
@@ -163,7 +179,7 @@ export const useAuthStore = defineStore('auth', () => {
   function resolveRoleDashboard(u: any): string {
     if (!u) return '/dashboard';
     if (u.is_admin || u.role === 'admin') return '/admin/dashboard';
-    if (u.is_instructor || u.role === 'instructor') return '/instructor/dashboard';
+    if (u.is_instructor || u.role === 'instructor' || u.role === 'facilitator') return '/instructor/dashboard';
     return '/dashboard';
   }
 
@@ -171,7 +187,8 @@ export const useAuthStore = defineStore('auth', () => {
   function returnUrlAllowedForUser(returnPath: string | null, u: any): returnPath is string {
     if (!returnPath || !returnPath.startsWith('/')) return false;
     if (u.is_admin || u.role === 'admin') return returnPath.startsWith('/admin');
-    if (u.is_instructor || u.role === 'instructor') return returnPath.startsWith('/instructor');
+    if (u.is_instructor || u.role === 'instructor' || u.role === 'facilitator')
+      return returnPath.startsWith('/instructor');
     return !returnPath.startsWith('/admin') && !returnPath.startsWith('/instructor');
   }
 
@@ -221,6 +238,7 @@ export const useAuthStore = defineStore('auth', () => {
         !user.value?.is_admin &&
         user.value?.role !== 'admin' &&
         user.value?.role !== 'instructor' &&
+        user.value?.role !== 'facilitator' &&
         !user.value?.is_instructor;
 
       const pendingLearnPath = isStudentUser ? await finalizePendingCourseEnrollment() : null;

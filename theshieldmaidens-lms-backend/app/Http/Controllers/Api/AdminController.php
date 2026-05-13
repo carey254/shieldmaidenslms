@@ -1251,59 +1251,79 @@ class AdminController extends Controller
             ->orderBy('is_pinned', 'desc')
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($announcement) {
-                return [
-                    'id' => $announcement->id,
-                    'title' => $announcement->title,
+            ->map(function (Announcement $announcement) {
+                $base = $announcement->toPortalArray();
+
+                return array_merge($base, [
                     'content' => $announcement->content,
                     'type' => $announcement->type,
                     'audience' => $announcement->audience,
                     'is_active' => $announcement->is_active,
-                    'is_pinned' => $announcement->is_pinned,
                     'starts_at' => $announcement->starts_at?->toISOString(),
                     'expires_at' => $announcement->expires_at?->toISOString(),
                     'views_count' => $announcement->views_count,
                     'course_id' => $announcement->course_id,
                     'course_title' => $announcement->course?->title,
-                    'created_by' => $announcement->creator->name,
-                    'created_at' => $announcement->created_at->toISOString(),
-                ];
+                    'created_by' => $announcement->creator?->name,
+                    'show_on_home' => (bool) $announcement->show_on_home,
+                    'show_in_portals' => (bool) $announcement->show_in_portals,
+                ]);
             });
 
         return response()->json(['announcements' => $announcements]);
     }
 
     /**
-     * Create announcement
+     * Create announcement (supports legacy admin UI fields: category, priority, expiry_date, is_featured).
      */
     public function createAnnouncement(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'type' => 'required|in:general,course,system,urgent',
-            'audience' => 'required|in:all,students,facilitators,admins',
+            'type' => 'sometimes|in:general,course,system,urgent',
+            'audience' => 'sometimes|in:all,students,facilitators,admins',
             'is_pinned' => 'sometimes|boolean',
             'starts_at' => 'sometimes|nullable|date',
-            'expires_at' => 'sometimes|nullable|date|after:starts_at',
+            'expires_at' => 'sometimes|nullable|date',
+            'expiry_date' => 'sometimes|nullable|date',
             'course_id' => 'sometimes|nullable|exists:courses,id',
+            'category' => 'sometimes|nullable|string|max:64',
+            'priority' => 'sometimes|nullable|in:low,medium,high,urgent',
+            'is_featured' => 'sometimes|boolean',
+            'application_link' => 'sometimes|nullable|string|max:2048',
+            'show_on_home' => 'sometimes|boolean',
+            'show_in_portals' => 'sometimes|boolean',
         ]);
+
+        $priority = $request->input('priority', 'medium');
+        $type = $request->input('type');
+        if (! $type) {
+            $type = $priority === 'urgent' ? 'urgent' : 'general';
+        }
+
+        $expiresAt = $request->input('expires_at') ?: $request->input('expiry_date');
 
         $announcement = Announcement::create([
             'title' => $request->title,
             'content' => $request->content,
-            'type' => $request->type,
-            'audience' => $request->audience,
+            'type' => $type,
+            'audience' => $request->input('audience', 'all'),
+            'category' => $request->input('category', 'general'),
+            'priority' => $priority,
             'is_active' => true,
-            'is_pinned' => $request->input('is_pinned', false),
+            'is_pinned' => $request->boolean('is_pinned', false),
+            'is_featured' => $request->boolean('is_featured', false),
+            'application_link' => $request->input('application_link'),
+            'show_on_home' => $request->boolean('show_on_home', true),
+            'show_in_portals' => $request->boolean('show_in_portals', true),
             'starts_at' => $request->input('starts_at'),
-            'expires_at' => $request->input('expires_at'),
-            'course_id' => $request->course_id,
+            'expires_at' => $expiresAt,
+            'course_id' => $request->input('course_id'),
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
 
-        // Log activity
         Activity::create([
             'user_id' => Auth::id(),
             'title' => 'Announcement Created',
@@ -1313,7 +1333,7 @@ class AdminController extends Controller
 
         return response()->json([
             'message' => 'Announcement created successfully',
-            'announcement' => $announcement
+            'announcement' => $announcement,
         ], 201);
     }
 

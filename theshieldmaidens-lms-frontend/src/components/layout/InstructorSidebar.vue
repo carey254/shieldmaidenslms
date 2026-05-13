@@ -21,6 +21,11 @@
         <span class="label">Courses</span>
       </RouterLink>
 
+      <RouterLink class="nav-item" to="/instructor/sessions" :class="{ active: isActive('/instructor/sessions') }">
+        <span class="icon">▣</span>
+        <span class="label">Sessions</span>
+      </RouterLink>
+
       <RouterLink class="nav-item" to="/instructor/settings" :class="{ active: isActive('/instructor/settings') }">
         <span class="icon">⚙</span>
         <span class="label">Settings</span>
@@ -68,8 +73,8 @@ const logout = async () => {
   bottom: 0;
   width: 96px;
   padding: 18px 14px;
-  background: #0b0d12;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   z-index: 1002;
@@ -87,7 +92,7 @@ const logout = async () => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: #e2e8f0;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -115,23 +120,23 @@ const logout = async () => {
   border-radius: 14px;
   display: grid;
   place-items: center;
-  color: rgba(255, 255, 255, 0.78);
+  color: #475569;
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   transition: background 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 
 .nav-item:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.09);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .nav-item.active {
-  background: rgba(171, 145, 255, 0.18);
-  border-color: rgba(171, 145, 255, 0.35);
-  color: #fff;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
 }
 
 .icon {
@@ -157,8 +162,8 @@ const logout = async () => {
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
+  background: #e2e8f0;
+  color: #0f172a;
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -172,14 +177,14 @@ const logout = async () => {
   width: 40px;
   height: 40px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
   cursor: pointer;
 }
 
 .logout:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #e2e8f0;
 }
 
 @media (min-width: 1100px) {
@@ -193,13 +198,13 @@ const logout = async () => {
   }
 
   .brand-title {
-    color: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
     font-weight: 700;
     font-size: 14px;
   }
 
   .brand-subtitle {
-    color: rgba(255, 255, 255, 0.55);
+    color: #64748b;
     font-size: 12px;
     margin-top: 2px;
   }
@@ -228,7 +233,7 @@ const logout = async () => {
   }
 
   .name {
-    color: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
     font-weight: 700;
     font-size: 13px;
     white-space: nowrap;
@@ -237,7 +242,7 @@ const logout = async () => {
   }
 
   .email {
-    color: rgba(255, 255, 255, 0.55);
+    color: #64748b;
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;

@@ -43,11 +43,6 @@ class Opportunity extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function applications()
-    {
-        return $this->hasMany(OpportunityApplication::class);
-    }
-
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
@@ -63,14 +58,21 @@ class Opportunity extends Model
         return $query->where('deadline', '>', now());
     }
 
-    public function scopeVisibleTo($query, $userRole)
+    public function scopeVisibleTo($query, string $userRole)
     {
         if ($userRole === 'admin') {
             return $query;
         }
-        
-        return $query->where('visibility', 'all')
-                    ->orWhere('visibility', $userRole);
+
+        return $query->where(function ($q) use ($userRole) {
+            $q->where('visibility', 'all');
+            if ($userRole === 'student') {
+                $q->orWhere('visibility', 'students');
+            }
+            if (in_array($userRole, ['instructor', 'facilitator'], true)) {
+                $q->orWhere('visibility', 'instructors');
+            }
+        });
     }
 
     public function getDaysUntilDeadlineAttribute()
@@ -87,8 +89,8 @@ class Opportunity extends Model
         return $this->deadline <= now();
     }
 
-    public function getApplicationCountAttribute()
+    public function getApplicationCountAttribute(): int
     {
-        return $this->applications()->count();
+        return 0;
     }
 }

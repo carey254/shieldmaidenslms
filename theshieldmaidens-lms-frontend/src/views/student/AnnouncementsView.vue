@@ -93,7 +93,7 @@
                 {{ getCategoryLabel(announcement.category) }}
               </span>
               <span class="priority-badge" :class="announcement.priority">
-                {{ announcement.priority.toUpperCase() }}
+                {{ (announcement.priority || 'medium').toUpperCase() }}
               </span>
             </div>
             <div class="announcement-date">
@@ -149,7 +149,7 @@
                 {{ getCategoryLabel(selectedAnnouncement.category) }}
               </span>
               <span class="priority-badge" :class="selectedAnnouncement.priority">
-                {{ selectedAnnouncement.priority.toUpperCase() }}
+                {{ (selectedAnnouncement.priority || 'medium').toUpperCase() }}
               </span>
               <span class="detail-date">
                 <i class="fas fa-calendar"></i>
@@ -186,8 +186,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
-
-const API_BASE_URL = localStorage.getItem('apiBaseUrl') || 'http://localhost:3000/api';
+import { API_BASE_URL } from '@/config/api';
 
 const announcements = ref([]);
 const selectedAnnouncement = ref(null);
@@ -273,7 +272,8 @@ const fetchAnnouncements = async () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
-    announcements.value = response.data;
+    const payload = response.data;
+    announcements.value = Array.isArray(payload) ? payload : (payload?.announcements ?? []);
   } catch (error) {
     console.error('Error fetching announcements:', error);
   }

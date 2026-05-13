@@ -47,6 +47,7 @@ Route::post('/secure-forgot-password', [AuthController::class, 'secureForgotPass
 
 // Public curriculum catalog (published courses)
 Route::get('/catalog/courses', [CatalogController::class, 'courses']);
+Route::get('/catalog/home-feed', [CatalogController::class, 'homeFeed']);
 
 // Protected routes (still require authentication)
 Route::middleware('auth:sanctum')->group(function () {
@@ -68,6 +69,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/meetings', [InstructorController::class, 'getMeetings']);
         Route::get('/opportunities', [InstructorController::class, 'getOpportunities']);
         Route::get('/notifications', [InstructorController::class, 'getNotifications']);
+        Route::get('/announcements', [InstructorController::class, 'getPortalAnnouncements']);
+        Route::get('/class-sessions', [InstructorController::class, 'listClassSessions']);
+        Route::post('/class-sessions', [InstructorController::class, 'storeClassSession']);
+        Route::put('/class-sessions/{id}', [InstructorController::class, 'updateClassSession']);
+        Route::delete('/class-sessions/{id}', [InstructorController::class, 'deleteClassSession']);
     });
     
     // Facilitator routes (require facilitator role)
@@ -81,6 +87,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/meetings', [InstructorController::class, 'getMeetings']);
         Route::get('/opportunities', [InstructorController::class, 'getOpportunities']);
         Route::get('/notifications', [InstructorController::class, 'getNotifications']);
+        Route::get('/announcements', [InstructorController::class, 'getPortalAnnouncements']);
+        Route::get('/class-sessions', [InstructorController::class, 'listClassSessions']);
+        Route::post('/class-sessions', [InstructorController::class, 'storeClassSession']);
+        Route::put('/class-sessions/{id}', [InstructorController::class, 'updateClassSession']);
+        Route::delete('/class-sessions/{id}', [InstructorController::class, 'deleteClassSession']);
     });
     
     // Student routes (require student role)
