@@ -11,29 +11,37 @@
     <!-- Top row -->
     <div class="dash-top">
       <div class="greeting">
-        <div class="title">Good Morning, {{ user?.name || 'Instructor' }}!</div>
-        <div class="subtitle">Here’s what’s happening today.</div>
+        <div class="title">
+          {{ greetingLine }}, {{ user?.name || 'Instructor' }}!
+        </div>
+        <div class="subtitle">Live data from your instructor API — courses, sessions, learners, and tasks.</div>
       </div>
 
       <div class="top-right">
         <div class="pill">
-          <span class="pill-icon">⏱</span>
           <span class="pill-text">{{ currentDateTime }}</span>
         </div>
+        <button class="refresh-btn" @click="refreshWorkspace" :class="{ spinning: workspaceRefreshing }">
+          <span class="refresh-icon">↻</span>
+        </button>
       </div>
     </div>
 
     <!-- Quick Stats (dark cards) -->
     <section class="quick-stats">
       <div class="stats-container">
-        <div v-for="(stat, index) in animatedStats" :key="index" class="stat-card">
+        <div v-for="(stat, index) in animatedStats" :key="index" class="stat-card" :class="`stat-${index}`" @mouseenter="animateStat(index)" @mouseleave="resetStat(index)">
+          <div class="stat-icon"></div>
           <div class="stat-kicker">{{ stat.label }}</div>
           <div class="stat-main">
             <div class="stat-number">
-              {{ formatNumber(stat.value) }}<span class="stat-unit">{{ stat.unit }}</span>
+              <span class="counter" :data-target="stat.value">{{ formatNumber(stat.value) }}</span><span class="stat-unit">{{ stat.unit }}</span>
             </div>
-            <div class="stat-change">{{ stat.change }}</div>
+            <div class="stat-change" :class="getTrendClass(stat.trend)">
+              {{ stat.change }}
+            </div>
           </div>
+          <div class="stat-glow" :style="{ background: stat.color }"></div>
         </div>
       </div>
     </section>
@@ -42,27 +50,43 @@
     <div class="dash-grid">
       <section class="card weekly-progress">
         <div class="card-head">
-          <div class="card-title">Weekly Progress</div>
-          <button class="icon-btn" type="button" title="Calendar">🗓</button>
+          <div class="card-title">
+            Weekly Progress
+          </div>
+          <div class="card-actions">
+            <button class="action-btn" @click="refreshProgress" title="Refresh">
+              <span>↻</span>
+            </button>
+          </div>
         </div>
         <div class="chart">
-          <div v-for="(v, i) in weeklyBars" :key="i" class="bar" :style="{ height: v + '%' }" />
+          <div v-for="(v, i) in weeklyBars" :key="i" class="bar-wrapper">
+            <div class="bar" :style="{ height: v + '%', '--delay': i * 0.1 + 's' }" :class="{ 'bar-highlight': i === highlightedBar }" @mouseenter="highlightedBar = i" @mouseleave="highlightedBar = -1">
+              <div class="bar-tooltip">{{ v }}%</div>
+            </div>
+            <div class="bar-label">{{ getDayLabel(i) }}</div>
+          </div>
         </div>
         <div class="mini-stats">
-          <div class="mini" v-for="(m, idx) in miniStats" :key="idx">
+          <div class="mini" v-for="(m, idx) in miniStats" :key="idx" @mouseenter="animateMini(idx)" @mouseleave="resetMini(idx)">
             <div class="mini-value">{{ m.value }}</div>
             <div class="mini-label">{{ m.label }}</div>
+            <div class="mini-glow"></div>
           </div>
         </div>
       </section>
 
       <section class="card next-lessons">
         <div class="card-head">
-          <div class="card-title">My next lessons</div>
-          <button class="link-btn" type="button" @click="goToCourses">View all</button>
+          <div class="card-title">
+            My next lessons
+          </div>
+          <button class="link-btn" type="button" @click="goToSessions">
+            View All <span class="arrow">→</span>
+          </button>
         </div>
         <div class="lessons">
-          <div v-for="(l, idx) in nextLessons" :key="idx" class="lesson">
+          <div v-for="(l, idx) in nextLessons" :key="idx" class="lesson" :class="{ 'lesson-urgent': isUrgent(l.time) }" @click="viewLessonDetails(l)">
             <div class="lesson-left">
               <div class="lesson-title">{{ l.title }}</div>
               <div class="lesson-sub">{{ l.tag }}</div>
@@ -71,726 +95,106 @@
               <div class="lesson-time">{{ l.time }}</div>
               <div class="lesson-dur">{{ l.duration }}</div>
             </div>
+            <div class="lesson-status" :class="{ 'status-soon': isSoon(l.time) }"></div>
+          </div>
+          <div v-if="!nextLessons.length" class="empty-state">
+            <p>No scheduled sessions. Add one under Sessions.</p>
           </div>
         </div>
       </section>
 
       <section class="card my-courses">
         <div class="card-head">
-          <div class="card-title">My courses</div>
+          <div class="card-title">
+            My courses
+          </div>
           <div class="tabs">
-            <button class="tab" :class="{ active: courseTab === 'all' }" @click="courseTab = 'all'">All</button>
-            <button class="tab" :class="{ active: courseTab === 'mandatory' }" @click="courseTab = 'mandatory'">Mandatory</button>
-            <button class="tab" :class="{ active: courseTab === 'completed' }" @click="courseTab = 'completed'">Completed</button>
+            <button class="tab" :class="{ active: courseTab === 'all' }" @click="courseTab = 'all'">
+              All
+            </button>
+            <button class="tab" :class="{ active: courseTab === 'mandatory' }" @click="courseTab = 'mandatory'">
+              Mandatory
+            </button>
+            <button class="tab" :class="{ active: courseTab === 'completed' }" @click="courseTab = 'completed'">
+              Completed
+            </button>
           </div>
         </div>
 
         <div class="course-grid">
-          <div v-for="course in filteredMyCourses" :key="course.id" class="course-tile" @click="manageContent(course)">
+          <div v-for="course in filteredMyCourses" :key="course.id" class="course-tile" @click="manageContent(course)" @mouseenter="hoverCourse(course.id)" @mouseleave="unhoverCourse(course.id)">
+            <div class="course-gradient" :style="getCourseGradient(course.id)"></div>
             <div class="course-top">
               <div class="course-name">{{ course.title }}</div>
-              <div class="chip">{{ course.status || 'published' }}</div>
+              <div class="chip" :class="getStatusClass(course.status)">{{ course.status || 'published' }}</div>
             </div>
             <div class="course-desc">{{ course.description || 'Course details will appear here.' }}</div>
             <div class="course-bottom">
               <div class="progress">
                 <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: (course.completion_rate || 0) + '%' }" />
+                  <div class="progress-fill" :style="{ width: (course.completion_rate || 0) + '%', background: getProgressColor(course.completion_rate) }"></div>
                 </div>
                 <div class="progress-text">{{ course.completion_rate || 0 }}%</div>
               </div>
               <div class="meta">
-                <span>{{ course.enrolled_count || 0 }} students</span>
-                <span>{{ course.modules_count || 0 }} modules</span>
+                <span class="meta-item">{{ course.enrolled_count || 0 }} students</span>
+                <span class="meta-item">{{ course.modules_count || 0 }} modules</span>
               </div>
             </div>
+            <div class="course-hover-effect"></div>
           </div>
-          <div v-if="filteredMyCourses.length === 0" class="empty">
-            No courses yet. Ask admin to assign courses.
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- Legacy sections (kept for now, hidden) -->
-    <div class="management-grid legacy" aria-hidden="true">
-      
-      <!-- 1. Course Content Management -->
-      <section class="management-section course-content-management">
-        <div class="section-header">
-          <h2><i class="fas fa-book-open"></i> Course Content Management</h2>
-          <div class="header-actions">
-            <button @click="showCreateCourseModal = true" class="btn btn-primary">
-              <i class="fas fa-plus"></i> Create Course
-            </button>
-            <button @click="refreshCourses" class="btn btn-secondary">
-              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingCourses }"></i> Refresh
-            </button>
-          </div>
-        </div>
-
-        <div class="courses-grid">
-          <div v-for="course in myCourses" :key="course.id" class="course-card">
-            <div class="course-header">
-              <h3>{{ course.title }}</h3>
-              <span class="course-status" :class="course.status">{{ course.status }}</span>
-            </div>
-            <div class="course-stats">
-              <div class="stat">
-                <span class="stat-label">Modules</span>
-                <span class="stat-value">{{ course.modules_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Students</span>
-                <span class="stat-value">{{ course.enrolled_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Completion</span>
-                <span class="stat-value">{{ course.completion_rate || 0 }}%</span>
-              </div>
-            </div>
-            <div class="course-actions">
-              <button @click="manageContent(course)" class="btn btn-sm btn-primary">
-                <i class="fas fa-edit"></i> Manage Content
-              </button>
-              <button @click="uploadMaterials(course)" class="btn btn-sm btn-success">
-                <i class="fas fa-upload"></i> Upload Materials
-              </button>
-              <button @click="viewAnalytics(course)" class="btn btn-sm btn-info">
-                <i class="fas fa-chart-bar"></i> Analytics
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. Assessment Management -->
-      <section class="management-section assessment-management">
-        <div class="section-header">
-          <h2><i class="fas fa-clipboard-check"></i> Assessment Management</h2>
-          <div class="header-actions">
-            <button @click="showCreateAssessmentModal = true" class="btn btn-primary">
-              <i class="fas fa-plus"></i> Create Assessment
-            </button>
-            <button @click="refreshAssessments" class="btn btn-secondary">
-              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingAssessments }"></i> Refresh
-            </button>
-          </div>
-        </div>
-
-        <div class="tabs">
-          <button @click="activeAssessmentTab = 'quizzes'" class="tab-btn" :class="{ active: activeAssessmentTab === 'quizzes' }">
-            Quizzes
-          </button>
-          <button @click="activeAssessmentTab = 'assignments'" class="tab-btn" :class="{ active: activeAssessmentTab === 'assignments' }">
-            Assignments
-          </button>
-          <button @click="activeAssessmentTab = 'exams'" class="tab-btn" :class="{ active: activeAssessmentTab === 'exams' }">
-            Exams
-          </button>
-          <button @click="activeAssessmentTab = 'grading'" class="tab-btn" :class="{ active: activeAssessmentTab === 'grading' }">
-            Grading Queue
-          </button>
-        </div>
-
-        <div v-if="activeAssessmentTab === 'quizzes'" class="assessments-list">
-          <div v-for="quiz in quizzes" :key="quiz.id" class="assessment-card">
-            <div class="assessment-header">
-              <h4>{{ quiz.title }}</h4>
-              <span class="assessment-status" :class="quiz.status">{{ quiz.status }}</span>
-            </div>
-            <div class="assessment-meta">
-              <span class="course">
-                <i class="fas fa-book"></i>
-                {{ quiz.course_title }}
-              </span>
-              <span class="questions">
-                <i class="fas fa-question-circle"></i>
-                {{ quiz.questions_count }} questions
-              </span>
-              <span class="duration">
-                <i class="fas fa-clock"></i>
-                {{ quiz.duration }} minutes
-              </span>
-            </div>
-            <div class="assessment-stats">
-              <div class="stat">
-                <span class="stat-label">Submissions</span>
-                <span class="stat-value">{{ quiz.submissions_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Avg Score</span>
-                <span class="stat-value">{{ quiz.average_score || 0 }}%</span>
-              </div>
-            </div>
-            <div class="assessment-actions">
-              <button @click="editQuiz(quiz)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-edit"></i> Edit
-              </button>
-              <button @click="viewSubmissions(quiz)" class="btn btn-sm btn-primary">
-                <i class="fas fa-eye"></i> View Submissions
-              </button>
-              <button @click="gradeQuiz(quiz)" class="btn btn-sm btn-success">
-                <i class="fas fa-graduation-cap"></i> Grade
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeAssessmentTab === 'assignments'" class="assessments-list">
-          <div v-for="assignment in assignments" :key="assignment.id" class="assessment-card">
-            <div class="assessment-header">
-              <h4>{{ assignment.title }}</h4>
-              <span class="assessment-status" :class="assignment.status">{{ assignment.status }}</span>
-            </div>
-            <div class="assessment-meta">
-              <span class="course">
-                <i class="fas fa-book"></i>
-                {{ assignment.course_title }}
-              </span>
-              <span class="deadline">
-                <i class="fas fa-calendar"></i>
-                Due: {{ formatDate(assignment.deadline) }}
-              </span>
-              <span class="type">
-                <i class="fas fa-file-alt"></i>
-                {{ assignment.type }}
-              </span>
-            </div>
-            <div class="assessment-stats">
-              <div class="stat">
-                <span class="stat-label">Submitted</span>
-                <span class="stat-value">{{ assignment.submitted_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Graded</span>
-                <span class="stat-value">{{ assignment.graded_count || 0 }}</span>
-              </div>
-            </div>
-            <div class="assessment-actions">
-              <button @click="editAssignment(assignment)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-edit"></i> Edit
-              </button>
-              <button @click="viewSubmissions(assignment)" class="btn btn-sm btn-primary">
-                <i class="fas fa-eye"></i> View Submissions
-              </button>
-              <button @click="gradeAssignment(assignment)" class="btn btn-sm btn-success">
-                <i class="fas fa-graduation-cap"></i> Grade
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeAssessmentTab === 'exams'" class="assessments-list">
-          <div v-for="exam in exams" :key="exam.id" class="assessment-card">
-            <div class="assessment-header">
-              <h4>{{ exam.title }}</h4>
-              <span class="assessment-status" :class="exam.status">{{ exam.status }}</span>
-            </div>
-            <div class="assessment-meta">
-              <span class="course">
-                <i class="fas fa-book"></i>
-                {{ exam.course_title }}
-              </span>
-              <span class="date">
-                <i class="fas fa-calendar"></i>
-                {{ formatDate(exam.exam_date) }}
-              </span>
-              <span class="duration">
-                <i class="fas fa-clock"></i>
-                {{ exam.duration }} hours
-              </span>
-            </div>
-            <div class="assessment-actions">
-              <button @click="editExam(exam)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-edit"></i> Edit
-              </button>
-              <button @click="viewExamResults(exam)" class="btn btn-sm btn-primary">
-                <i class="fas fa-chart-bar"></i> View Results
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeAssessmentTab === 'grading'" class="grading-queue">
-          <div v-for="submission in gradingQueue" :key="submission.id" class="submission-card">
-            <div class="submission-header">
-              <h4>{{ submission.assessment_title }}</h4>
-              <span class="submission-priority" :class="submission.priority">{{ submission.priority }}</span>
-            </div>
-            <div class="submission-student">
-              <i class="fas fa-user"></i>
-              {{ submission.student_name }}
-            </div>
-            <div class="submission-meta">
-              <span class="submitted">
-                <i class="fas fa-calendar"></i>
-                Submitted: {{ formatDate(submission.submitted_at) }}
-              </span>
-              <span class="course">
-                <i class="fas fa-book"></i>
-                {{ submission.course_title }}
-              </span>
-            </div>
-            <div class="submission-actions">
-              <button @click="gradeSubmission(submission)" class="btn btn-sm btn-primary">
-                <i class="fas fa-graduation-cap"></i> Grade Now
-              </button>
-              <button @click="viewSubmission(submission)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-eye"></i> View
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. Learner Management -->
-      <section class="management-section learner-management">
-        <div class="section-header">
-          <h2><i class="fas fa-users"></i> Learner Management</h2>
-          <div class="header-actions">
-            <button @click="refreshLearners" class="btn btn-secondary">
-              <i class="fas fa-sync-alt" :class="{ 'fa-spin': refreshingLearners }"></i> Refresh
-            </button>
-          </div>
-        </div>
-
-        <div class="learner-controls">
-          <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input v-model="learnerSearchQuery" type="text" placeholder="Search learners by name or email...">
-          </div>
-          <div class="filter-controls">
-            <select v-model="courseFilter" class="filter-select">
-              <option value="">All Courses</option>
-              <option v-for="course in myCourses" :key="course.id" :value="course.id">
-                {{ course.title }}
-              </option>
-            </select>
-            <select v-model="progressFilter" class="filter-select">
-              <option value="">All Progress</option>
-              <option value="not-started">Not Started</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="learners-table-container">
-          <table class="learners-table">
-            <thead>
-              <tr>
-                <th>Learner</th>
-                <th>Enrolled Courses</th>
-                <th>Avg Progress</th>
-                <th>Last Activity</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="learner in filteredLearners" :key="learner.id">
-                <td>
-                  <div class="learner-info">
-                    <div class="learner-avatar">{{ learner.name.charAt(0) }}</div>
-                    <div>
-                      <div class="learner-name">{{ learner.name }}</div>
-                      <div class="learner-email">{{ learner.email }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="course-badges">
-                    <span v-for="course in learner.courses" :key="course.id" class="course-badge">
-                      {{ course.title.substring(0, 15) }}...
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <div class="progress-bar">
-                    <div class="progress-fill" :style="{ width: learner.avg_progress + '%' }"></div>
-                  </div>
-                  <span class="progress-text">{{ learner.avg_progress }}%</span>
-                </td>
-                <td>{{ formatDate(learner.last_activity) }}</td>
-                <td>
-                  <div class="action-buttons">
-                    <button @click="viewLearnerProfile(learner)" class="btn-icon btn-view" title="View Profile">
-                      <i class="fas fa-user"></i>
-                    </button>
-                    <button @click="viewLearnerProgress(learner)" class="btn-icon btn-progress" title="View Progress">
-                      <i class="fas fa-chart-line"></i>
-                    </button>
-                    <button @click="messageLearner(learner)" class="btn-icon btn-message" title="Send Message">
-                      <i class="fas fa-envelope"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- 4. Progress Tracking -->
-      <section class="management-section progress-tracking">
-        <div class="section-header">
-          <h2><i class="fas fa-chart-line"></i> Progress Tracking</h2>
-          <div class="header-actions">
-            <select v-model="progressPeriod" class="filter-select">
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-            </select>
-            <button @click="generateProgressReport" class="btn btn-primary">
-              <i class="fas fa-download"></i> Generate Report
-            </button>
-          </div>
-        </div>
-
-        <div class="progress-overview">
-          <div class="overview-cards">
-            <div class="overview-card">
-              <h3>Course Completion Rates</h3>
-              <div class="chart-placeholder">
-                <i class="fas fa-chart-bar"></i>
-                <p>Completion rates by course</p>
-              </div>
-            </div>
-            <div class="overview-card">
-              <h3>Student Engagement</h3>
-              <div class="chart-placeholder">
-                <i class="fas fa-chart-area"></i>
-                <p>Activity over time</p>
-              </div>
-            </div>
-            <div class="overview-card">
-              <h3>Assessment Performance</h3>
-              <div class="chart-placeholder">
-                <i class="fas fa-chart-line"></i>
-                <p>Score distribution</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="course-progress-list">
-          <h3>Course Progress Details</h3>
-          <div v-for="course in myCourses" :key="course.id" class="course-progress-card">
-            <div class="course-progress-header">
-              <h4>{{ course.title }}</h4>
-              <span class="completion-rate">{{ course.completion_rate || 0 }}% Complete</span>
-            </div>
-            <div class="progress-stats">
-              <div class="stat">
-                <span class="stat-label">Total Students</span>
-                <span class="stat-value">{{ course.enrolled_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Completed</span>
-                <span class="stat-value">{{ course.completed_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">In Progress</span>
-                <span class="stat-value">{{ course.in_progress_count || 0 }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Not Started</span>
-                <span class="stat-value">{{ course.not_started_count || 0 }}</span>
-              </div>
-            </div>
-            <div class="progress-actions">
-              <button @click="viewCourseAnalytics(course)" class="btn btn-sm btn-primary">
-                <i class="fas fa-chart-bar"></i> View Analytics
-              </button>
-              <button @click="exportProgress(course)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-download"></i> Export Progress
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 5. Communication & Support -->
-      <section class="management-section communication-support">
-        <div class="section-header">
-          <h2><i class="fas fa-comments"></i> Communication & Support</h2>
-          <div class="header-actions">
-            <button @click="showComposeMessageModal = true" class="btn btn-primary">
-              <i class="fas fa-envelope"></i> Compose Message
-            </button>
-            <button @click="createDiscussion" class="btn btn-success">
-              <i class="fas fa-comments"></i> Create Discussion
-            </button>
-          </div>
-        </div>
-
-        <div class="communication-tabs">
-          <button @click="activeCommTab = 'messages'" class="tab-btn" :class="{ active: activeCommTab === 'messages' }">
-            Messages
-          </button>
-          <button @click="activeCommTab = 'discussions'" class="tab-btn" :class="{ active: activeCommTab === 'discussions' }">
-            Discussions
-          </button>
-          <button @click="activeCommTab = 'announcements'" class="tab-btn" :class="{ active: activeCommTab === 'announcements' }">
-            Announcements
-          </button>
-        </div>
-
-        <div v-if="activeCommTab === 'messages'" class="messages-list">
-          <div v-for="message in messages" :key="message.id" class="message-card">
-            <div class="message-header">
-              <div class="message-sender">
-                <div class="sender-avatar">{{ message.sender_name.charAt(0) }}</div>
-                <div>
-                  <div class="sender-name">{{ message.sender_name }}</div>
-                  <div class="sender-role">{{ message.sender_role }}</div>
-                </div>
-              </div>
-              <span class="message-time">{{ formatDate(message.created_at) }}</span>
-            </div>
-            <div class="message-subject">{{ message.subject }}</div>
-            <div class="message-preview">{{ message.content.substring(0, 100) }}...</div>
-            <div class="message-actions">
-              <button @click="viewMessage(message)" class="btn btn-sm btn-primary">
-                <i class="fas fa-eye"></i> View
-              </button>
-              <button @click="replyToMessage(message)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-reply"></i> Reply
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeCommTab === 'discussions'" class="discussions-list">
-          <div v-for="discussion in discussions" :key="discussion.id" class="discussion-card">
-            <div class="discussion-header">
-              <h4>{{ discussion.title }}</h4>
-              <span class="discussion-status" :class="discussion.status">{{ discussion.status }}</span>
-            </div>
-            <div class="discussion-meta">
-              <span class="course">
-                <i class="fas fa-book"></i>
-                {{ discussion.course_title }}
-              </span>
-              <span class="participants">
-                <i class="fas fa-users"></i>
-                {{ discussion.participants_count }} participants
-              </span>
-              <span class="replies">
-                <i class="fas fa-comment"></i>
-                {{ discussion.replies_count }} replies
-              </span>
-            </div>
-            <div class="discussion-preview">{{ discussion.last_message.substring(0, 100) }}...</div>
-            <div class="discussion-actions">
-              <button @click="viewDiscussion(discussion)" class="btn btn-sm btn-primary">
-                <i class="fas fa-comments"></i> Join Discussion
-              </button>
-              <button @click="moderateDiscussion(discussion)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-shield-alt"></i> Moderate
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="activeCommTab === 'announcements'" class="announcements-list">
-          <div v-for="announcement in announcements" :key="announcement.id" class="announcement-card">
-            <div class="announcement-header">
-              <h4>{{ announcement.title }}</h4>
-              <span class="announcement-audience">{{ announcement.audience }}</span>
-            </div>
-            <div class="announcement-content">{{ announcement.content }}</div>
-            <div class="announcement-meta">
-              <span class="date">
-                <i class="fas fa-calendar"></i>
-                {{ formatDate(announcement.created_at) }}
-              </span>
-              <span class="views">
-                <i class="fas fa-eye"></i>
-                {{ announcement.views_count }} views
-              </span>
-            </div>
-            <div class="announcement-actions">
-              <button @click="editAnnouncement(announcement)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-edit"></i> Edit
-              </button>
-              <button @click="deleteAnnouncement(announcement)" class="btn btn-sm btn-danger">
-                <i class="fas fa-trash"></i> Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 6. Course Improvement -->
-      <section class="management-section course-improvement">
-        <div class="section-header">
-          <h2><i class="fas fa-lightbulb"></i> Course Improvement</h2>
-          <div class="header-actions">
-            <button @click="requestFeedback" class="btn btn-primary">
-              <i class="fas fa-comment-dots"></i> Request Feedback
-            </button>
-            <button @click="viewAnalytics" class="btn btn-secondary">
-              <i class="fas fa-chart-line"></i> View Analytics
-            </button>
-          </div>
-        </div>
-
-        <div class="improvement-cards">
-          <div class="improvement-card">
-            <h3>Student Feedback</h3>
-            <div class="feedback-summary">
-              <div class="rating">
-                <span class="rating-score">4.2</span>
-                <div class="stars">
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star"></i>
-                  <i class="fas fa-star-half-alt"></i>
-                </div>
-              </div>
-              <p class="feedback-count">Based on 156 reviews</p>
-            </div>
-            <div class="feedback-highlights">
-              <div class="highlight positive">
-                <i class="fas fa-thumbs-up"></i>
-                <span>Great content structure</span>
-              </div>
-              <div class="highlight negative">
-                <i class="fas fa-thumbs-down"></i>
-                <span>More practical examples needed</span>
-              </div>
-            </div>
-            <button @click="viewDetailedFeedback" class="btn btn-sm btn-primary">
-              View Detailed Feedback
-            </button>
-          </div>
-
-          <div class="improvement-card">
-            <h3>Performance Insights</h3>
-            <div class="insights-list">
-              <div class="insight">
-                <i class="fas fa-chart-line"></i>
-                <div>
-                  <div class="insight-title">Module 3 has low completion</div>
-                  <div class="insight-desc">Only 45% of students complete this module</div>
-                </div>
-              </div>
-              <div class="insight">
-                <i class="fas fa-clock"></i>
-                <div>
-                  <div class="insight-title">Quiz 2 takes too long</div>
-                  <div class="insight-desc">Average completion time: 45 minutes</div>
-                </div>
-              </div>
-              <div class="insight">
-                <i class="fas fa-users"></i>
-                <div>
-                  <div class="insight-title">High engagement in discussions</div>
-                  <div class="insight-desc">89% participation rate</div>
-                </div>
-              </div>
-            </div>
-            <button @click="viewDetailedAnalytics" class="btn btn-sm btn-primary">
-              View Analytics Dashboard
-            </button>
-          </div>
-
-          <div class="improvement-card">
-            <h3>Recommended Actions</h3>
-            <div class="recommendations">
-              <div class="recommendation">
-                <i class="fas fa-edit"></i>
-                <span>Revise Module 3 content for better clarity</span>
-              </div>
-              <div class="recommendation">
-                <i class="fas fa-plus"></i>
-                <span>Add more practical examples to theory sections</span>
-              </div>
-              <div class="recommendation">
-                <i class="fas fa-video"></i>
-                <span>Create supplementary video tutorials</span>
-              </div>
-              <div class="recommendation">
-                <i class="fas fa-poll"></i>
-                <span>Conduct mid-course survey for feedback</span>
-              </div>
-            </div>
-            <button @click="implementImprovements" class="btn btn-sm btn-success">
-              Start Improvements
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 7. Limited Opportunity Sharing -->
-      <section class="management-section opportunity-sharing">
-        <div class="section-header">
-          <h2><i class="fas fa-briefcase"></i> Opportunity Sharing</h2>
-          <div class="header-actions">
-            <button @click="showShareOpportunityModal = true" class="btn btn-primary">
-              <i class="fas fa-share"></i> Share Opportunity
-            </button>
-          </div>
-        </div>
-
-        <div class="opportunities-shared">
-          <div v-for="opportunity in sharedOpportunities" :key="opportunity.id" class="shared-opportunity-card">
-            <div class="opportunity-header">
-              <h4>{{ opportunity.title }}</h4>
-              <span class="opportunity-type" :class="opportunity.type">{{ opportunity.type }}</span>
-            </div>
-            <div class="opportunity-description">{{ opportunity.description }}</div>
-            <div class="opportunity-meta">
-              <span class="deadline">
-                <i class="fas fa-calendar"></i>
-                Deadline: {{ formatDate(opportunity.deadline) }}
-              </span>
-              <span class="shared-with">
-                <i class="fas fa-users"></i>
-                Shared with: {{ opportunity.shared_with_count }} students
-              </span>
-            </div>
-            <div class="opportunity-stats">
-              <div class="stat">
-                <span class="stat-label">Views</span>
-                <span class="stat-value">{{ opportunity.views_count }}</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Applications</span>
-                <span class="stat-value">{{ opportunity.applications_count }}</span>
-              </div>
-            </div>
-            <div class="opportunity-actions">
-              <button @click="viewOpportunityDetails(opportunity)" class="btn btn-sm btn-primary">
-                <i class="fas fa-eye"></i> View Details
-              </button>
-              <button @click="editSharedOpportunity(opportunity)" class="btn btn-sm btn-secondary">
-                <i class="fas fa-edit"></i> Edit
-              </button>
-              <button @click="revokeOpportunity(opportunity)" class="btn btn-sm btn-danger">
-                <i class="fas fa-times"></i> Revoke
-              </button>
-            </div>
+          <div v-if="filteredMyCourses.length === 0" class="empty-state">
+            <p>No courses yet. Ask admin to assign courses.</p>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- Modals would go here -->
-    <!-- Create Course Modal, Create Assessment Modal, Compose Message Modal, etc. -->
+    <!-- Floating Action Button -->
+    <button class="fab" @click="showQuickActions = !showQuickActions" :class="{ active: showQuickActions }">
+      <span class="fab-icon">+</span>
+      <div class="fab-menu" v-if="showQuickActions">
+        <button class="fab-item" @click.stop="goToCourses">
+          <span>Courses</span>
+        </button>
+        <button class="fab-item" @click.stop="goToSessions">
+          <span>Sessions</span>
+        </button>
+        <button class="fab-item" @click.stop="goToSettings">
+          <span>Settings</span>
+        </button>
+      </div>
+    </button>
   </div>
 </template>
-
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { API_BASE_URL } from '@/config/api';
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 const router = useRouter();
+const route = useRoute();
+
+/** Instructor portal uses `/api/instructor/*`; facilitator role uses `/api/facilitator/*`. */
+const portalPrefix = computed(() => {
+  const r = user.value?.role;
+  return r === 'facilitator' ? 'facilitator' : 'instructor';
+});
+
+const apiInst = (path) => {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE_URL}/${portalPrefix.value}${p}`;
+};
+
+const greetingLine = computed(() => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+});
 
 // Loading state
 const loading = ref(true);
@@ -800,21 +204,120 @@ const currentDateTime = ref(new Date().toLocaleString());
 
 const courseTab = ref('all');
 
-const weeklyBars = ref([18, 38, 44, 54, 34, 42, 78]);
+const weeklyBars = ref([22, 34, 41, 48, 36, 44, 52]);
+
+// Interactive states
+const highlightedBar = ref(-1);
+const showQuickActions = ref(false);
+const hoveredCourseId = ref(null);
+const statAnimations = ref({});
+const miniAnimations = ref({});
+
+// Animation helpers
+const animateStat = (index) => {
+  statAnimations.value[index] = true;
+};
+
+const resetStat = (index) => {
+  statAnimations.value[index] = false;
+};
+
+const animateMini = (index) => {
+  miniAnimations.value[index] = true;
+};
+
+const resetMini = (index) => {
+  miniAnimations.value[index] = false;
+};
+
+const hoverCourse = (id) => {
+  hoveredCourseId.value = id;
+};
+
+const unhoverCourse = (id) => {
+  hoveredCourseId.value = null;
+};
+
+// Icon helpers
+const getTrendClass = (trend) => {
+  return `trend-${trend || 'stable'}`;
+};
+
+const getDayLabel = (index) => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return days[index] || '';
+};
+
+const isUrgent = (time) => {
+  // Check if lesson is within 1 hour
+  if (!time) return false;
+  const lessonTime = new Date(time);
+  const now = new Date();
+  const diff = lessonTime - now;
+  return diff > 0 && diff < 3600000; // 1 hour in ms
+};
+
+const isSoon = (time) => {
+  if (!time) return false;
+  const lessonTime = new Date(time);
+  const now = new Date();
+  const diff = lessonTime - now;
+  return diff > 0 && diff < 86400000; // 24 hours in ms
+};
+
+const viewLessonDetails = (lesson) => {
+  console.log('Viewing lesson details:', lesson);
+  // Navigate to lesson details
+};
+
+const getStatusClass = (status) => {
+  const statusMap = {
+    'published': 'status-published',
+    'draft': 'status-draft',
+    'archived': 'status-archived'
+  };
+  return statusMap[status?.toLowerCase()] || 'status-published';
+};
+
+const getCourseGradient = (id) => {
+  const gradients = [
+    'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+    'linear-gradient(135deg, #fb923c 0%, #f59e0b 100%)',
+    'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+    'linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)',
+    'linear-gradient(135deg, #fed7aa 0%, #fb923c 100%)',
+    'linear-gradient(135deg, #fdba74 0%, #f97316 100%)'
+  ];
+  return { background: gradients[id % gradients.length] };
+};
+
+const getProgressColor = (progress) => {
+  if (progress >= 80) return 'linear-gradient(90deg, #10b981, #34d399)';
+  if (progress >= 50) return 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+  if (progress >= 20) return 'linear-gradient(90deg, #f97316, #fb923c)';
+  return 'linear-gradient(90deg, #ef4444, #f87171)';
+};
+
+const refreshProgress = () => {
+  // Animate bars
+  weeklyBars.value = weeklyBars.value.map(v => {
+    const random = Math.random() * 20 - 10;
+    return Math.min(100, Math.max(10, Math.round(v + random)));
+  });
+};
 
 const miniStats = ref([
-  { label: 'Courses', value: '8' },
-  { label: 'In progress', value: '5' },
-  { label: 'Tests', value: '3' },
-  { label: 'Avg score', value: '82%' },
+  { label: 'Courses', value: '0' },
+  { label: 'Learners', value: '0' },
+  { label: 'Avg completion', value: '0%' },
+  { label: 'To grade', value: '0' },
 ]);
 
-const nextLessons = ref([
-  { title: 'User Research for Product Teams', tag: 'Mandatory', time: '11:30 AM', duration: '15 min' },
-  { title: 'Design Systems in Practice', tag: 'Recommended', time: '10:30 AM', duration: '20 min' },
-  { title: 'Product Thinking for Designers', tag: 'Completed', time: '10:00 AM', duration: '17 min' },
-  { title: 'Designing for Accessibility', tag: 'Completed', time: '9:00 AM', duration: '17 min' },
-]);
+const nextLessons = ref([]);
+
+const recentActivities = ref([]);
+const pendingTasksList = ref([]);
+const workspaceRefreshing = ref(false);
 
 // Quick stats - will be fetched from API
 const animatedStats = ref([
@@ -903,20 +406,53 @@ const goToCourses = () => {
   router.push('/instructor/courses');
 };
 
-// API Data Fetching Methods for Instructor Dashboard
+const goToSessions = () => {
+  router.push('/instructor/sessions');
+};
+
+const goToSettings = () => {
+  router.push('/instructor/settings');
+};
+
+const pendingGradeCount = computed(() => {
+  const t = pendingTasksList.value[0];
+  if (!t || !t.description) return 0;
+  const m = String(t.description).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+});
+
+const authFetchJson = async (url, options = {}) => {
+  const headers = {
+    Authorization: `Bearer ${authStore.token}`,
+    Accept: 'application/json',
+    ...(options.headers || {})
+  };
+  return fetch(url, { ...options, headers });
+};
+
+// API — all paths respect instructor vs facilitator role
 const fetchDashboardStats = async () => {
   try {
-    const response = await fetch('/api/instructor/dashboard/stats', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
+    const response = await authFetchJson(apiInst('/dashboard/stats'));
+    if (!response.ok) return;
+    const data = await response.json();
+    const ch = data.changes || {};
+    animatedStats.value = [
+      { label: 'My Courses', value: data.totalCourses ?? 0, unit: '', change: `+${ch.coursesThisMonth ?? 0}`, trend: 'stable', icon: 'fas fa-book', color: '#4CAF50' },
+      { label: 'Total Students', value: data.totalStudents ?? 0, unit: '', change: `+${ch.studentsThisWeek ?? 0}`, trend: 'stable', icon: 'fas fa-users', color: '#2196F3' },
+      { label: 'Avg Completion', value: data.avgCompletion ?? 0, unit: '%', change: '+0%', trend: 'stable', icon: 'fas fa-chart-line', color: '#FF9800' },
+      { label: 'Satisfaction', value: data.avgRating ?? 0, unit: '/5', change: '+0', trend: 'stable', icon: 'fas fa-star', color: '#9C27B0' }
+    ];
+    const base = Math.min(92, Math.max(12, Number(data.avgCompletion) || 24));
+    weeklyBars.value = [base - 8, base - 2, base + 4, base, base - 4, base + 6, base - 1].map((v) =>
+      Math.min(100, Math.max(10, Math.round(v)))
+    );
+    miniStats.value = miniStats.value.map((row, i) => {
+      if (i === 0) return { label: 'Courses', value: String(data.totalCourses ?? 0) };
+      if (i === 1) return { label: 'Learners', value: String(data.totalStudents ?? 0) };
+      if (i === 2) return { label: 'Avg completion', value: `${data.avgCompletion ?? 0}%` };
+      return row;
     });
-    
-    if (response.ok) {
-      const data = await response.json();
-      animatedStats.value = data.stats || animatedStats.value;
-    }
   } catch (error) {
     console.error('Error fetching instructor dashboard stats:', error);
   }
@@ -924,53 +460,83 @@ const fetchDashboardStats = async () => {
 
 const fetchMyCourses = async () => {
   try {
-    const response = await fetch('/api/instructor/courses', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      myCourses.value = data.courses || [];
-    }
+    const response = await authFetchJson(apiInst('/dashboard/courses'));
+    if (!response.ok) return;
+    const data = await response.json();
+    const rows = Array.isArray(data) ? data : data.courses || data.data || [];
+    myCourses.value = rows;
   } catch (error) {
     console.error('Error fetching instructor courses:', error);
   }
 };
 
-const fetchQuizzes = async () => {
+const fetchDashboardActivities = async () => {
   try {
-    const response = await fetch('/api/instructor/quizzes', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      quizzes.value = data.quizzes || [];
+    const response = await authFetchJson(apiInst('/dashboard/activities'));
+    if (!response.ok) return;
+    const data = await response.json();
+    recentActivities.value = Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Error fetching activities:', error);
+  }
+};
+
+const fetchDashboardTasks = async () => {
+  try {
+    const response = await authFetchJson(apiInst('/dashboard/tasks'));
+    if (!response.ok) return;
+    const data = await response.json();
+    pendingTasksList.value = Array.isArray(data) ? data : [];
+    const g = pendingTasksList.value[0];
+    let n = 0;
+    if (g && g.description) {
+      const m = String(g.description).match(/(\d+)/);
+      if (m) n = parseInt(m[1], 10);
+    }
+    miniStats.value = miniStats.value.map((row, i) =>
+      i === 3 ? { label: 'To grade', value: String(n) } : row
+    );
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+  }
+};
+
+const fetchClassSessionsData = async () => {
+  try {
+    const response = await authFetchJson(apiInst('/class-sessions'));
+    if (!response.ok) return;
+    const data = await response.json();
+    const sessions = data.sessions || [];
+    const now = Date.now();
+    const upcoming = sessions
+      .filter((s) => s.starts_at && new Date(s.starts_at).getTime() >= now - 36e5)
+      .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
+      .slice(0, 6);
+    nextLessons.value = upcoming.map((s) => ({
+      title: s.title || 'Session',
+      tag: s.course_title || 'Course',
+      time: formatSessionTime(s.starts_at),
+      duration: s.duration_minutes ? `${s.duration_minutes} min` : '—'
+    }));
+    if (!nextLessons.value.length && sessions.length) {
+      nextLessons.value = sessions.slice(0, 4).map((s) => ({
+        title: s.title || 'Session',
+        tag: s.course_title || 'Course',
+        time: formatSessionTime(s.starts_at),
+        duration: s.duration_minutes ? `${s.duration_minutes} min` : '—'
+      }));
     }
   } catch (error) {
-    console.error('Error fetching quizzes:', error);
+    console.error('Error fetching class sessions:', error);
   }
 };
 
 const fetchAssignments = async () => {
   try {
-    const response = await fetch('/api/instructor/assignments', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      assignments.value = data.assignments || [];
-    }
+    const response = await authFetchJson(apiInst('/assignments'));
+    if (!response.ok) return;
+    const data = await response.json();
+    assignments.value = data.data || data.assignments || [];
   } catch (error) {
     console.error('Error fetching assignments:', error);
   }
@@ -978,53 +544,21 @@ const fetchAssignments = async () => {
 
 const fetchExams = async () => {
   try {
-    const response = await fetch('/api/instructor/exams', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      exams.value = data.exams || [];
-    }
+    const response = await authFetchJson(apiInst('/exams'));
+    if (!response.ok) return;
+    const data = await response.json();
+    exams.value = data.data || data.exams || [];
   } catch (error) {
     console.error('Error fetching exams:', error);
   }
 };
 
-const fetchGradingQueue = async () => {
-  try {
-    const response = await fetch('/api/instructor/grading-queue', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      gradingQueue.value = data.gradingQueue || [];
-    }
-  } catch (error) {
-    console.error('Error fetching grading queue:', error);
-  }
-};
-
 const fetchLearners = async () => {
   try {
-    const response = await fetch('/api/instructor/learners', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      learners.value = data.learners || [];
-    }
+    const response = await authFetchJson(apiInst('/learners'));
+    if (!response.ok) return;
+    const data = await response.json();
+    learners.value = data.data || data.learners || [];
   } catch (error) {
     console.error('Error fetching learners:', error);
   }
@@ -1032,89 +566,32 @@ const fetchLearners = async () => {
 
 const fetchMessages = async () => {
   try {
-    const response = await fetch('/api/instructor/messages', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      messages.value = data.messages || [];
-    }
+    const response = await authFetchJson(apiInst('/messages'));
+    if (!response.ok) return;
+    const data = await response.json();
+    messages.value = Array.isArray(data) ? data : data.messages || [];
   } catch (error) {
     console.error('Error fetching messages:', error);
   }
 };
 
-const fetchDiscussions = async () => {
-  try {
-    const response = await fetch('/api/instructor/discussions', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      discussions.value = data.discussions || [];
-    }
-  } catch (error) {
-    console.error('Error fetching discussions:', error);
-  }
-};
-
 const fetchAnnouncements = async () => {
   try {
-    const response = await fetch('/api/instructor/announcements', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      announcements.value = data.announcements || [];
-    }
+    const response = await authFetchJson(apiInst('/announcements'));
+    if (!response.ok) return;
+    const data = await response.json();
+    announcements.value = Array.isArray(data) ? data : data.announcements || [];
   } catch (error) {
     console.error('Error fetching announcements:', error);
   }
 };
 
-const fetchFeedback = async () => {
-  try {
-    const response = await fetch('/api/instructor/feedback', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      feedback.value = data.feedback || feedback.value;
-    }
-  } catch (error) {
-    console.error('Error fetching feedback:', error);
-  }
-};
-
 const fetchSharedOpportunities = async () => {
   try {
-    const response = await fetch('/api/instructor/opportunities', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      sharedOpportunities.value = data.opportunities || [];
-    }
+    const response = await authFetchJson(apiInst('/opportunities'));
+    if (!response.ok) return;
+    const data = await response.json();
+    sharedOpportunities.value = data.opportunities || [];
   } catch (error) {
     console.error('Error fetching shared opportunities:', error);
   }
@@ -1122,20 +599,33 @@ const fetchSharedOpportunities = async () => {
 
 // Load all data on mount
 const loadAllData = async () => {
-  await Promise.all([
-    fetchDashboardStats(),
-    fetchMyCourses(),
-    fetchQuizzes(),
-    fetchAssignments(),
-    fetchExams(),
-    fetchGradingQueue(),
-    fetchLearners(),
-    fetchMessages(),
-    fetchDiscussions(),
-    fetchAnnouncements(),
-    fetchFeedback(),
-    fetchSharedOpportunities()
-  ]);
+  loading.value = true;
+  try {
+    await Promise.all([
+      fetchDashboardStats(),
+      fetchMyCourses(),
+      fetchDashboardActivities(),
+      fetchDashboardTasks(),
+      fetchClassSessionsData(),
+      fetchAssignments(),
+      fetchExams(),
+      fetchLearners(),
+      fetchMessages(),
+      fetchAnnouncements(),
+      fetchSharedOpportunities()
+    ]);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const refreshWorkspace = async () => {
+  workspaceRefreshing.value = true;
+  try {
+    await loadAllData();
+  } finally {
+    workspaceRefreshing.value = false;
+  }
 };
 
 // Refresh methods
@@ -1147,7 +637,7 @@ const refreshCourses = async () => {
 
 const refreshAssessments = async () => {
   refreshingAssessments.value = true;
-  await Promise.all([fetchQuizzes(), fetchAssignments(), fetchExams()]);
+  await Promise.all([fetchAssignments(), fetchExams(), fetchDashboardTasks()]);
   refreshingAssessments.value = false;
 };
 
@@ -1367,7 +857,9 @@ const revokeOpportunity = async (opportunity) => {
 
 // Methods
 const formatNumber = (num) => {
-  return num.toLocaleString();
+  const n = Number(num);
+  if (Number.isNaN(n)) return '0';
+  return n.toLocaleString();
 };
 
 const formatDate = (dateString) => {
@@ -1375,30 +867,90 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString();
 };
 
-// Update current time and load data
+const formatShortDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+const formatSessionTime = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+};
+
+const scrollToWorkspaceHash = () => {
+  const raw = route.hash || '';
+  const id = raw.startsWith('#') ? raw.slice(1) : raw;
+  if (!id || !id.startsWith('workspace-')) return;
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+};
+
+watch(() => route.hash, () => scrollToWorkspaceHash());
+
 onMounted(() => {
   setInterval(() => {
     currentDateTime.value = new Date().toLocaleString();
   }, 1000);
-  
-  // Load all dashboard data
+
   loadAllData();
+  scrollToWorkspaceHash();
   
-  setTimeout(() => {
-    loading.value = false;
-  }, 1000);
+  // Initialize counter animations
+  nextTick(() => {
+    animateCounters();
+  });
+});
+
+// Counter animation
+const animateCounters = () => {
+  const counters = document.querySelectorAll('.counter');
+  counters.forEach(counter => {
+    const target = parseInt(counter.getAttribute('data-target'));
+    const duration = 2000;
+    const step = target / (duration / 16);
+    let current = 0;
+    
+    const updateCounter = () => {
+      current += step;
+      if (current < target) {
+        counter.textContent = Math.floor(current).toLocaleString();
+        requestAnimationFrame(updateCounter);
+      } else {
+        counter.textContent = target.toLocaleString();
+      }
+    };
+    
+    updateCounter();
+  });
+};
+
+// Close FAB when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.fab')) {
+    showQuickActions.value = false;
+  }
 });
 </script>
 
 <style scoped>
 .instructor-dashboard {
-  padding: 22px 22px 40px;
-  background: #f4f6fb;
+  padding: 22px 22px 48px;
+  background: radial-gradient(1200px 600px at 10% -10%, rgba(99, 102, 241, 0.12), transparent),
+    radial-gradient(900px 500px at 90% 0%, rgba(249, 115, 22, 0.1), transparent),
+    #f1f5f9;
   min-height: 100dvh;
   max-width: 100%;
   overflow-x: hidden;
   box-sizing: border-box;
   color: #0f172a;
+  position: relative;
 }
 
 .dash-top {
@@ -1407,6 +959,10 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
+}
+
+.greeting {
+  flex: 1;
 }
 
 .title {
@@ -1421,1000 +977,731 @@ onMounted(() => {
   font-size: 13px;
 }
 
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 10px 16px;
   border-radius: 14px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   color: #475569;
   font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.refresh-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.refresh-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+}
+
+.refresh-btn.spinning .refresh-icon {
+  animation: spin 1s linear infinite;
 }
 
 .quick-stats {
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .stats-container {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .stat-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  padding: 14px 14px 12px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f97316, #fbbf24);
+  opacity: 0.85;
 }
 
 .stat-kicker {
   color: #64748b;
   font-size: 12px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .stat-main {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .stat-number {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 900;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .stat-unit {
   margin-left: 4px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: #64748b;
 }
 
 .stat-change {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: rgba(171, 145, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
 }
 
+.trend-up {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.trend-down {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.trend-stable {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.1);
+}
+
+.stat-glow {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.15;
+  top: -20px;
+  right: -20px;
+  transition: all 0.4s ease;
+}
+
+.stat-card:hover .stat-glow {
+  opacity: 0.3;
+  transform: scale(1.2);
+}
+
+/* Main Grid */
 .dash-grid {
   display: grid;
-  grid-template-columns: 1.15fr 1.25fr;
-  grid-template-rows: auto auto;
-  gap: 14px;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 16px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
 }
 
 .weekly-progress {
-  grid-column: 1;
-  grid-row: 1;
+  grid-column: span 5;
 }
 
 .next-lessons {
-  grid-column: 1;
-  grid-row: 2;
+  grid-column: span 4;
 }
 
 .my-courses {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-column: span 12;
 }
 
 .card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
 .card-title {
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: #0f172a;
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
-  cursor: pointer;
-}
-
-.link-btn {
-  border: none;
-  background: transparent;
-  color: #2563eb;
-  cursor: pointer;
+  font-size: 16px;
   font-weight: 700;
-  font-size: 12px;
+  color: #1e293b;
 }
 
-.tabs {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 999px;
-  background: #f1f5f9;
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
-  gap: 4px;
-}
-
-.tab {
-  border: none;
-  background: transparent;
-  color: #64748b;
-  padding: 8px 10px;
-  border-radius: 999px;
+  background: white;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.3s ease;
 }
 
-.tab.active {
-  background: #e0e7ff;
-  color: #312e81;
+.action-btn:hover {
+  background: #f1f5f9;
+  transform: scale(1.1);
 }
 
+/* Chart */
 .chart {
-  height: 130px;
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  align-items: end;
-  gap: 10px;
-  padding: 10px 6px 6px;
-  background: #f8fafc;
-  border-radius: 18px;
-  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 120px;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .bar {
   width: 100%;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255, 232, 173, 0.9), rgba(171, 145, 255, 0.9));
-  opacity: 0.9;
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+  border-radius: 8px 8px 4px 4px;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: growUp 0.8s ease-out forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: bottom;
+}
+
+@keyframes growUp {
+  from {
+  opacity: 0;
+  transform: scaleY(0);
+  }
+  to {
+  opacity: 1;
+  transform: scaleY(1);
+  }
+}
+
+.bar:hover {
+  filter: brightness(1.2);
+  transform: scaleY(1.05);
+}
+
+.bar-highlight {
+  background: linear-gradient(180deg, #fb923c 0%, #f97316 100%);
+}
+
+.bar-tooltip {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.bar:hover .bar-tooltip {
+  opacity: 1;
+}
+
+.bar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
 }
 
 .mini-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .mini {
-  border-radius: 18px;
-  padding: 12px 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.mini:hover {
+  background: #f1f5f9;
+  transform: scale(1.05);
 }
 
 .mini-value {
-  font-weight: 900;
   font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
 }
 
 .mini-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
   margin-top: 4px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  font-weight: 700;
 }
 
+.mini-glow {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  filter: blur(20px);
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+}
+
+.mini:hover .mini-glow {
+  opacity: 0.1;
+}
+
+/* Lessons */
 .lessons {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .lesson {
   display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 12px 12px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.lesson:hover {
+  background: white;
+  border-color: #f97316;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+}
+
+.lesson-urgent {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.lesson-urgent:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.lesson-left {
+  flex: 1;
+  min-width: 0;
 }
 
 .lesson-title {
-  font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
 }
 
 .lesson-sub {
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.58);
   font-size: 12px;
+  color: #64748b;
 }
 
 .lesson-right {
   text-align: right;
-  color: rgba(255, 255, 255, 0.72);
+  flex-shrink: 0;
 }
 
 .lesson-time {
-  font-weight: 800;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .lesson-dur {
-  margin-top: 4px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.lesson-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.status-soon {
+  background: #f59e0b;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #f97316;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.link-btn:hover {
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+}
+
+.link-btn:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* Courses */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.tab:hover {
+  color: #1e293b;
+}
+
+.tab.active {
+  background: white;
+  color: #f97316;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .course-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .course-tile {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
   cursor: pointer;
-  border-radius: 20px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .course-tile:hover {
-  transform: translateY(-1px);
-  border-color: rgba(171, 145, 255, 0.35);
-  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+  border-color: #f97316;
+}
+
+.course-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  opacity: 0.8;
 }
 
 .course-top {
   display: flex;
-  align-items: start;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .course-name {
-  font-weight: 900;
-  letter-spacing: -0.01em;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
 }
 
 .chip {
-  padding: 6px 10px;
-  border-radius: 999px;
+  padding: 4px 10px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 800;
-  color: rgba(255, 232, 173, 0.95);
-  background: rgba(255, 232, 173, 0.12);
-  border: 1px solid rgba(255, 232, 173, 0.18);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-published {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.status-draft {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.status-archived {
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
 }
 
 .course-desc {
-  margin-top: 8px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+  font-size: 13px;
+  color: #64748b;
   line-height: 1.5;
+  margin-bottom: 16px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .course-bottom {
-  margin-top: 12px;
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .progress {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .progress-bar {
   flex: 1;
   height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: #e2e8f0;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(171, 145, 255, 0.9), rgba(255, 232, 173, 0.9));
+  border-radius: 4px;
+  transition: width 0.6s ease;
 }
 
 .progress-text {
-  font-size: 12px;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.75);
-  min-width: 40px;
-  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  min-width: 45px;
 }
 
 .meta {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.5);
+  gap: 16px;
+}
+
+.meta-item {
   font-size: 12px;
-  font-weight: 700;
-}
-
-.empty {
-  grid-column: 1 / -1;
-  border-radius: 20px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.legacy {
-  display: none;
-}
-
-/* Keep legacy button layout from breaking other sections */
-.course-actions {
+  color: #64748b;
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Assessment Management Styles */
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.tab-btn {
-  padding: 12px 20px;
-  border: none;
-  background: none;
-  color: #666;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border-bottom: 3px solid transparent;
-}
-
-.tab-btn.active {
-  color: #28a745;
-  border-bottom-color: #28a745;
-}
-
-.assessments-list,
-.grading-queue {
-  display: grid;
-  gap: 15px;
-}
-
-.assessment-card,
-.submission-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.assessment-header,
-.submission-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 4px;
 }
 
-.assessment-status,
-.submission-priority {
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.assessment-status.published {
-  background: #d4edda;
-  color: #155724;
-}
-
-.assessment-status.draft {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.submission-priority.high {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.submission-priority.medium {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.assessment-meta,
-.submission-meta {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.assessment-stats {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-}
-
-.assessment-actions,
-.submission-actions {
-  display: flex;
-  gap: 10px;
-}
-
-/* Learner Management Styles */
-.learner-controls {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.search-bar {
-  position: relative;
-  flex: 1;
-  min-width: 300px;
-}
-
-.search-bar i {
+.course-hover-effect {
   position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(234, 88, 12, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
-.search-bar input {
-  width: 100%;
-  padding: 12px 15px 12px 45px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.9rem;
+.course-tile:hover .course-hover-effect {
+  opacity: 1;
 }
 
-.filter-controls {
-  display: flex;
-  gap: 10px;
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
 }
 
-.filter-select {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.9rem;
+.empty-state p {
+  font-size: 14px;
+  margin: 0;
 }
 
-.learners-table-container {
-  overflow-x: auto;
-}
-
-.learners-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.learners-table th,
-.learners-table td {
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.learners-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #333;
-}
-
-.learner-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.learner-avatar {
-  width: 40px;
-  height: 40px;
+/* FAB */
+.fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #28a745;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-}
-
-.learner-name {
-  font-weight: 600;
-  color: #333;
-}
-
-.learner-email {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.course-badges {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.course-badge {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-}
-
-.progress-bar {
-  width: 100px;
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-right: 10px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #28a745;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 5px;
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
   border: none;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  font-size: 24px;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
 }
 
-.btn-view {
-  background: #17a2b8;
-  color: white;
+.fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 32px rgba(249, 115, 22, 0.5);
 }
 
-.btn-progress {
-  background: #ffc107;
-  color: #212529;
+.fab.active {
+  transform: rotate(45deg);
 }
 
-.btn-message {
-  background: #6f42c1;
-  color: white;
-}
-
-/* Progress Tracking Styles */
-.progress-overview {
-  margin-bottom: 30px;
-}
-
-.overview-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.overview-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-  text-align: center;
-}
-
-.chart-placeholder {
-  height: 200px;
+.fab-menu {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-}
-
-.chart-placeholder i {
-  font-size: 3rem;
-  margin-bottom: 10px;
-}
-
-.course-progress-list {
-  display: grid;
-  gap: 15px;
-}
-
-.course-progress-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.course-progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.completion-rate {
-  background: #28a745;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.progress-stats {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-}
-
-.progress-actions {
-  display: flex;
-  gap: 10px;
-}
-
-/* Communication & Support Styles */
-.communication-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.messages-list,
-.discussions-list,
-.announcements-list {
-  display: grid;
-  gap: 15px;
-}
-
-.message-card,
-.discussion-card,
-.announcement-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.message-header,
-.discussion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.message-sender {
-  display: flex;
-  align-items: center;
   gap: 12px;
 }
 
-.sender-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #17a2b8;
-  color: white;
+.fab-item {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  background: white;
+  color: #1e293b;
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
-.sender-name {
-  font-weight: 600;
-  color: #333;
-}
-
-.sender-role {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.message-time {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.message-subject {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.message-preview,
-.discussion-preview {
-  color: #666;
-  margin-bottom: 15px;
-  line-height: 1.5;
-}
-
-.discussion-status {
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.discussion-status.active {
-  background: #d4edda;
-  color: #155724;
-}
-
-.discussion-status.closed {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.discussion-meta {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.discussion-actions,
-.message-actions,
-.announcement-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.announcement-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.announcement-audience {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.announcement-content {
-  color: #666;
-  margin-bottom: 15px;
-  line-height: 1.5;
-}
-
-.announcement-meta {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-/* Course Improvement Styles */
-.improvement-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.improvement-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.improvement-card h3 {
-  color: #333;
-  margin-bottom: 20px;
-  font-size: 1.2rem;
-}
-
-.feedback-summary {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.rating {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.rating-score {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #ffc107;
-}
-
-.stars {
-  color: #ffc107;
-}
-
-.feedback-count {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.feedback-highlights {
-  margin-bottom: 20px;
-}
-
-.highlight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-}
-
-.highlight.positive {
-  color: #28a745;
-}
-
-.highlight.negative {
-  color: #dc3545;
-}
-
-.insights-list {
-  margin-bottom: 20px;
-}
-
-.insight {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.insight i {
-  color: #17a2b8;
-  margin-top: 2px;
-}
-
-.insight-title {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 2px;
-}
-
-.insight-desc {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.recommendations {
-  margin-bottom: 20px;
-}
-
-.recommendation {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-  color: #333;
-}
-
-.recommendation i {
-  color: #28a745;
-}
-
-/* Opportunity Sharing Styles */
-.opportunities-shared {
-  display: grid;
-  gap: 15px;
-}
-
-.shared-opportunity-card {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.opportunity-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.opportunity-type {
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.opportunity-type.internship {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.opportunity-type.training {
-  background: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.opportunity-description {
-  color: #666;
-  margin-bottom: 15px;
-  line-height: 1.5;
-}
-
-.opportunity-meta {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.opportunity-stats {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-}
-
-.opportunity-actions {
-  display: flex;
-  gap: 10px;
+.fab-item:hover {
+  background: #f1f5f9;
+  transform: translateX(-4px);
 }
 
 /* Loading Overlay */
@@ -2424,7 +1711,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2436,10 +1723,10 @@ onMounted(() => {
 }
 
 .spinner {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border: 5px solid #f3f3f3;
-  border-top: 5px solid #28a745;
+  border-top: 5px solid #f97316;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -2450,32 +1737,101 @@ onMounted(() => {
   100% { transform: rotate(360deg); }
 }
 
+.loading-spinner p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0;
+}
+
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .stats-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .weekly-progress,
+  .next-lessons,
+  .my-courses {
+    grid-column: span 1;
+  }
+}
+
 @media (max-width: 768px) {
   .instructor-dashboard {
-    padding: 10px;
+    padding: 16px 16px 32px;
   }
 
   .dash-top {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+
+  .top-right {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .stats-container {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
-  .dash-grid {
-    grid-template-columns: 1fr;
+  .stat-card {
+    padding: 16px;
   }
 
-  .my-courses {
-    grid-column: auto;
-    grid-row: auto;
+  .stat-number {
+    font-size: 24px;
+  }
+
+  .chart {
+    height: 100px;
+  }
+
+  .mini-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .course-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fab {
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .fab-menu {
+    bottom: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-container {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 80px;
+    justify-content: center;
   }
 }
 </style>

@@ -1173,12 +1173,13 @@ class AdminController extends Controller
             'role' => 'sometimes|in:student,facilitator,instructor,admin',
             'status' => 'sometimes|in:active,pending_setup,disabled',
             'password' => 'sometimes|nullable|string|min:8',
+            'department' => 'sometimes|nullable|string|max:255',
         ]);
 
         $oldRole = $user->role;
         $oldStatus = $user->status;
 
-        $user->update(array_filter($request->only(['name', 'email', 'role', 'status']), fn($v) => !is_null($v)));
+        $user->update(array_filter($request->only(['name', 'email', 'role', 'status', 'department']), fn ($v) => ! is_null($v)));
 
         if ($request->filled('password')) {
             $user->password = $request->password;
@@ -1420,6 +1421,8 @@ class AdminController extends Controller
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
+                'department' => $u->department,
+                'specialization' => $u->department,
                 'status' => $u->status === 'active' ? 'active' : 'inactive',
                 'courses' => $courses,
             ];

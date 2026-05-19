@@ -278,7 +278,7 @@ const logout = async () => {
 }
 
 .settings-header h1 {
-  color: #1a365d;
+  color: #f97316;
   margin-bottom: 0.5rem;
 }
 
@@ -301,7 +301,7 @@ const logout = async () => {
 }
 
 .settings-section h3 {
-  color: #1a365d;
+  color: #f97316;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid #f1f5f9;
@@ -333,7 +333,7 @@ const logout = async () => {
 .form-textarea:focus,
 .form-select:focus {
   outline: none;
-  border-color: #1a365d;
+  border-color: #f97316;
 }
 
 .form-input[readonly] {
@@ -367,7 +367,7 @@ const logout = async () => {
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #1a365d;
+  accent-color: #f97316;
 }
 
 .btn {
@@ -384,23 +384,23 @@ const logout = async () => {
 }
 
 .btn-primary {
-  background: #1a365d;
+  background: #f97316;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2c5282;
+  background: #ea580c;
   transform: translateY(-1px);
 }
 
 .btn-outline {
   background: white;
-  color: #1a365d;
-  border: 2px solid #1a365d;
+  color: #f97316;
+  border: 2px solid #f97316;
 }
 
 .btn-outline:hover {
-  background: #1a365d;
+  background: #f97316;
   color: white;
 }
 

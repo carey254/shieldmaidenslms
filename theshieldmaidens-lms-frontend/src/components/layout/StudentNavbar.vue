@@ -9,8 +9,8 @@
     <!-- Right Side Actions -->
     <div class="navbar-actions">
       <!-- Language Dropdown -->
-      <div class="language-dropdown" @click="toggleLanguageDropdown" :class="{ 'active': showLanguageDropdown }">
-        <div class="language-trigger">
+      <div class="language-dropdown" :class="{ 'active': showLanguageDropdown }">
+        <div class="language-trigger" @click="toggleLanguageDropdown">
           <span class="language-icon">🌐</span>
           <span class="language-text">{{ currentLanguage.name }}</span>
           <svg class="dropdown-arrow" :class="{ 'rotated': showLanguageDropdown }" width="12" height="8" viewBox="0 0 12 8" fill="none">
@@ -18,13 +18,13 @@
           </svg>
         </div>
         
-        <div v-if="showLanguageDropdown" class="language-menu" @mouseleave="hideLanguageDropdown">
+        <div v-if="showLanguageDropdown" class="language-menu">
           <div 
             v-for="lang in languages" 
             :key="lang.code" 
             class="language-option"
             :class="{ 'active': lang.code === currentLanguage.code }"
-            @click="selectLanguage(lang)"
+            @click.stop="selectLanguage(lang)"
           >
             <span class="flag">{{ lang.flag }}</span>
             <span class="lang-name">{{ lang.name }}</span>
@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import UserProfileDropdown from './UserProfileDropdown.vue'
 import { PUBLIC_BRAND_LOGO } from '@/config/branding'
@@ -56,15 +56,9 @@ const currentLanguage = ref({
 
 const languages = ref([
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'pt', name: 'Português', flag: '🇵🇹' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦' },
-  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' }
+  { code: 'ar', name: 'العربية', flag: '🇸🇦' }
 ])
 
 // Language functions
@@ -76,16 +70,33 @@ const hideLanguageDropdown = () => {
   showLanguageDropdown.value = false
 }
 
-const selectLanguage = (lang) => {
+const selectLanguage = (lang: any) => {
   currentLanguage.value = lang
   hideLanguageDropdown()
   // TODO: Implement actual language change logic
   console.log('Language changed to:', lang.name)
 }
 
+// Close dropdown when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const dropdown = target.closest('.language-dropdown')
+  if (!dropdown) {
+    hideLanguageDropdown()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 // Navigation function
 const goToDashboard = () => {
-  router.push('/dashboard')
+  router.push('/student/dashboard')
 }
 </script>
 
@@ -139,21 +150,24 @@ const goToDashboard = () => {
   gap: 20px;
 }
 
-/* Language Dropdown */
+/* Language Dropdown Styles */
 .language-dropdown {
   position: relative;
+  z-index: 10001;
 }
 
 .language-trigger {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   background: white;
-  border: 1px solid #dee2e6;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  pointer-events: auto !important;
+  user-select: none;
 }
 
 .language-trigger:hover {
@@ -198,7 +212,8 @@ const goToDashboard = () => {
   min-width: 200px;
   max-height: 300px;
   overflow-y: auto;
-  z-index: 1001;
+  z-index: 10000;
+  pointer-events: auto;
 }
 
 .language-option {

@@ -1,38 +1,78 @@
 <template>
   <div class="certificates">
-    <div class="page-header">
-      <button @click="goBack" class="back-btn">
-        ← Back to Dashboard
-      </button>
-      <h1>Certificates</h1>
-    </div>
-    
-    <div class="certificates-container">
-      <div class="certificate-card">
-        <div class="certificate-icon">🏆</div>
-        <h3>Introduction to Online Privacy</h3>
-        <p class="completion-date">Completed: March 10, 2024</p>
-        <p class="certificate-id">Certificate ID: PRIV-2024-001</p>
-        <button class="download-btn">Download Certificate</button>
+    <!-- LEFT SIDEBAR -->
+    <div class="left-sidebar">
+      <div class="logo" @click="goToDashboard">
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-image" />
+        <span class="logo-text">Shield Maidens</span>
       </div>
       
-      <div class="certificate-card">
-        <div class="certificate-icon">🎯</div>
-        <h3>Password Security Basics</h3>
-        <p class="completion-date">Completed: March 5, 2024</p>
-        <p class="certificate-id">Certificate ID: PASS-2024-002</p>
-        <button class="download-btn">Download Certificate</button>
-      </div>
+      <nav class="nav-menu">
+        <div class="nav-column">
+          <div class="nav-item" @click="handleNavigation('/dashboard')">
+            <span>Dashboard</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/courses')">
+            <span>Explore Courses</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/sessions')">
+            <span>Class Sessions</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/submissions')">
+            <span>Submissions</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/groups')">
+            <span>Groups</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/community')">
+            <span>Community</span>
+          </div>
+          <div class="nav-item active" @click="handleNavigation('/certificates')">
+            <span>Certificates</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/my-courses')">
+            <span>My Courses</span>
+          </div>
+        </div>
+      </nav>
       
-      <div class="certificate-card">
-        <div class="certificate-icon">🔒</div>
-        <h3>Digital Safety Fundamentals</h3>
-        <p class="completion-date">Completed: February 28, 2024</p>
-        <p class="certificate-id">Certificate ID: SAFE-2024-003</p>
-        <button class="download-btn">Download Certificate</button>
+      <div class="sidebar-bottom">
+        <div class="current-course">
+          <div class="course-label">Welcome back,</div>
+          <div class="course-name">{{ currentUser?.name ?? currentUser?.username ?? 'Student' }}</div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <div class="page-header">
+        <h1>Certificates</h1>
+      </div>
+      
+      <div class="certificates-container">
+        <!-- Loading state -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner">⏳ Loading certificates...</div>
+        </div>
+        
+        <!-- Empty state -->
+        <div v-else-if="certificates.length === 0" class="empty-state">
+          <div class="empty-icon">🏆</div>
+          <p class="empty-text">No certificates yet.</p>
+          <p class="empty-hint">Complete courses to earn your certificates!</p>
+        </div>
+        
+        <!-- Certificates list -->
+        <div v-else class="certificate-card" v-for="cert in certificates" :key="cert.id">
+          <div class="certificate-icon">🏆</div>
+          <h3>{{ cert.title }}</h3>
+          <p class="completion-date">Completed: {{ cert.completedDate }}</p>
+          <p class="certificate-id">Certificate ID: {{ cert.certificateId }}</p>
+          <button class="download-btn">Download Certificate</button>
+        </div>
+      </div>
+    </div>
     
     <!-- FLOATING ACTION BUTTONS -->
     <div class="floating-buttons">
@@ -162,13 +202,35 @@
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { apiService } from '@/services/api'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
+import { API_BASE_URL } from '@/config/api'
+
+interface User {
+  name?: string
+  username?: string
+}
+
+interface Certificate {
+  id: string | number
+  title: string
+  completedDate: string
+  certificateId: string
+}
 
 const router = useRouter()
+
+// State
+const currentUser = ref<User | null>(null)
+const certificates = ref<Certificate[]>([])
+const isLoading = ref(true)
 
 // Modal states
 const showAccessibility = ref(false)
@@ -207,9 +269,43 @@ const faqs = ref([
   }
 ])
 
-const goBack = () => {
+const handleNavigation = (route: string) => {
+  router.push(route)
+}
+
+const goToDashboard = () => {
   router.push('/dashboard')
 }
+
+const loadCurrentUser = () => {
+  try {
+    const user = apiService.getCurrentUserFromStorage()
+    currentUser.value = user
+  } catch (error) {
+    console.error('Error loading current user:', error)
+  }
+}
+
+const loadCertificates = async () => {
+  certificates.value = []
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const { data } = await axios.get(`${API_BASE_URL}/student/certificates`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    certificates.value = (Array.isArray(data) ? data : []) as Certificate[]
+  } catch (error) {
+    console.error('Error loading certificates:', error)
+    certificates.value = []
+  }
+}
+
+onMounted(async () => {
+  loadCurrentUser()
+  await loadCertificates()
+  isLoading.value = false
+})
 
 // Modal functions
 const openAccessibility = () => {
@@ -286,10 +382,155 @@ const submitHelpForm = () => {
 }
 </script>
 
-<style>
+<style scoped>
 .certificates {
+  display: flex;
+  min-height: 100dvh;
+  background: #f5f5f5;
+}
+
+/* LEFT SIDEBAR */
+.left-sidebar {
+  width: 250px;
+  background: #000000;
+  color: white;
   padding: 20px;
-  padding-bottom: 2rem;
+  min-height: 100dvh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.logo-image {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.nav-menu {
+  flex: 1;
+}
+
+.nav-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #333333;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.active {
+  background-color: #333333;
+  border-left: 4px solid white;
+  padding-left: 8px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.current-course {
+  margin-bottom: 15px;
+}
+
+.course-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #b2dfdb;
+  margin-bottom: 5px;
+}
+
+.course-name {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Loading and Empty States */
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px dashed #ddd;
+}
+
+.loading-spinner {
+  font-size: 18px;
+  color: #666;
+  margin: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px dashed #ddd;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  color: #666;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.empty-hint {
+  color: #999;
+  margin: 0;
+  font-size: 14px;
 }
 
 .page-header {
@@ -368,7 +609,6 @@ const submitHelpForm = () => {
 .download-btn:hover {
   background: #00695c;
 }
-</style>
 
 /* FLOATING ACTION BUTTONS */
 .floating-buttons {
@@ -688,5 +928,6 @@ input:checked + .slider:before {
 
 :global(.screen-reader) {
   /* Screen reader specific styles */
+  line-height: 1.5;
 }
 </style>

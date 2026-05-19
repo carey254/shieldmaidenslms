@@ -234,7 +234,7 @@ html, body, #app {
   width: 100%;
   position: relative;
   z-index: 1;
-  padding-top: 60px; /* Reduced for mobile */
+  padding-top: 90px; /* Reduced since contact bar is removed */
   transition: padding-left 0.3s ease; /* Smooth transition for mobile menu */
 }
 
@@ -243,7 +243,8 @@ html, body, #app {
   padding-top: 24px;
   padding-left: 110px;
   padding-right: 12px;
-  background: #0f1116;
+  background: var(--light); /* cream white background for instructor pages */
+  color: var(--dark); /* dark text for readability */
   min-height: 100dvh;
   box-sizing: border-box;
   max-width: 100vw;
@@ -549,7 +550,7 @@ input, textarea, select {
 /* Responsive Design - Mobile First */
 @media (max-width: 480px) {
   .main-content {
-    padding-top: 50px;
+    padding-top: 130px; /* Increased for mobile to account for header */
   }
   
   .student-header {
@@ -578,7 +579,7 @@ input, textarea, select {
 
 @media (min-width: 481px) and (max-width: 767px) {
   .main-content {
-    padding-top: 55px;
+    padding-top: 135px; /* Increased for tablet to account for header */
   }
   
   .student-content {
@@ -592,7 +593,7 @@ input, textarea, select {
 
 @media (min-width: 768px) {
   .main-content {
-    padding-top: 70px;
+    padding-top: 150px; /* Increased for desktop to account for header */
   }
   
   .student-header {
@@ -616,13 +617,13 @@ input, textarea, select {
 
 @media (min-width: 1024px) {
   .main-content {
-    padding-top: 90px;
+    padding-top: 160px; /* Increased for larger screens to account for header */
   }
 }
 
 @media (min-width: 1200px) {
   .main-content {
-    padding-top: 120px;
+    padding-top: 170px; /* Increased for large screens to account for header */
   }
 }
 

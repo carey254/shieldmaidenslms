@@ -207,7 +207,7 @@ label {
   margin-top: 0.35rem;
 }
 .btn.primary {
-  background: #4f46e5;
+  background: #f97316;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -247,7 +247,7 @@ label {
   align-items: flex-end;
 }
 .link {
-  color: #2563eb;
+  color: #f97316;
   font-size: 0.88rem;
 }
 </style>

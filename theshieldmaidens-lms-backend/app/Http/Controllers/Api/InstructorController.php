@@ -9,9 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Activity;
 use App\Models\Course;
-use App\Models\Enrollment;
 use App\Models\Assignment;
-use App\Models\Submission;
+use App\Models\Exam;
 use App\Models\Message;
 use App\Models\Opportunity;
 use App\Models\Notification;
@@ -35,10 +34,12 @@ class InstructorController extends Controller
         // Total courses
         $totalCourses = $instructorCourses->count();
 
-        // Total students across all instructor's courses
-        $totalStudents = DB::table('enrollments')
+        // Total students across all instructor's courses (distinct learners)
+        $totalStudents = (int) DB::table('enrollments')
             ->whereIn('course_id', $instructorCourses)
-            ->distinct('user_id')
+            ->select('user_id')
+            ->groupBy('user_id')
+            ->get()
             ->count();
 
         // Average completion rate
@@ -93,9 +94,9 @@ class InstructorController extends Controller
         
         $courses = DB::table('courses')
             ->where('instructor_id', $instructor->id)
-            ->select('id', 'title', 'description', 'image', 'created_at')
+            ->select('id', 'title', 'description', 'thumbnail', 'status', 'modules_count', 'created_at')
             ->orderBy('created_at', 'desc')
-            ->limit(6)
+            ->limit(12)
             ->get()
             ->map(function ($course) {
                 $enrolledStudents = DB::table('enrollments')
@@ -109,7 +110,7 @@ class InstructorController extends Controller
                     round((DB::table('enrollments')
                         ->where('course_id', $course->id)
                         ->whereNotNull('completed_at')
-                        ->count() / 
+                        ->count() /
                         DB::table('enrollments')
                             ->where('course_id', $course->id)
                             ->count()) * 100) : 0;
@@ -118,9 +119,15 @@ class InstructorController extends Controller
                     'id' => $course->id,
                     'title' => $course->title,
                     'description' => $course->description,
-                    'image' => $course->image,
+                    'image' => $course->thumbnail,
+                    'thumbnail' => $course->thumbnail,
+                    'status' => $course->status,
+                    'modules_count' => (int) $course->modules_count,
                     'enrolledStudents' => $enrolledStudents,
-                    'avgCompletion' => $avgCompletion
+                    'enrolled_count' => $enrolledStudents,
+                    'avgCompletion' => $avgCompletion,
+                    'completion_rate' => $avgCompletion,
+                    'created_at' => $course->created_at,
                 ];
             });
 
@@ -134,20 +141,18 @@ class InstructorController extends Controller
     {
         $instructor = Auth::user();
         
-        $activities = Activity::with(['user', 'course'])
-            ->whereHas('course', function ($query) use ($instructor) {
-                $query->where('instructor_id', $instructor->id);
-            })
-            ->orWhere('user_id', $instructor->id)
+        $activities = Activity::with('user')
+            ->where('user_id', $instructor->id)
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(15)
             ->get()
             ->map(function ($activity) {
                 return [
                     'id' => $activity->id,
                     'type' => $activity->type ?? 'system',
+                    'title' => $activity->title,
                     'description' => $activity->description,
-                    'timestamp' => $activity->created_at->timestamp
+                    'timestamp' => $activity->created_at->timestamp,
                 ];
             });
 
@@ -352,7 +357,7 @@ class InstructorController extends Controller
         $rows = Announcement::query()
             ->active()
             ->where('show_in_portals', true)
-            ->whereIn('audience', ['all', 'facilitators', 'students'])
+            ->whereIn('audience', ['all', 'facilitators', 'instructors', 'students'])
             ->orderByDesc('is_pinned')
             ->orderByDesc('is_featured')
             ->orderByDesc('created_at')
@@ -465,5 +470,169 @@ class InstructorController extends Controller
         $session->delete();
 
         return response()->json(['message' => 'Session deleted']);
+    }
+
+    /**
+     * Assignments for courses taught by this instructor.
+     */
+    public function getAssignmentsForInstructor()
+    {
+        $courseIds = Course::where('instructor_id', Auth::id())->pluck('id');
+        if ($courseIds->isEmpty()) {
+            return response()->json(['data' => []]);
+        }
+
+        $items = Assignment::with(['course:id,title'])
+            ->whereIn('course_id', $courseIds)
+            ->orderByDesc('created_at')
+            ->limit(40)
+            ->get()
+            ->map(function (Assignment $a) {
+                $submitted = $a->submissions()->count();
+                $graded = $a->submissions()->whereNotNull('graded_at')->count();
+
+                return [
+                    'id' => $a->id,
+                    'title' => $a->title,
+                    'course_title' => $a->course?->title ?? '',
+                    'due_date' => $a->due_date?->toISOString(),
+                    'status' => $a->is_published ? 'published' : 'draft',
+                    'submitted_count' => $submitted,
+                    'graded_count' => $graded,
+                ];
+            });
+
+        return response()->json(['data' => $items]);
+    }
+
+    /**
+     * Exams scheduled for this instructor's courses.
+     */
+    public function getExamsForInstructor()
+    {
+        $courseIds = Course::where('instructor_id', Auth::id())->pluck('id');
+        if ($courseIds->isEmpty()) {
+            return response()->json(['data' => []]);
+        }
+
+        $items = Exam::with(['course:id,title'])
+            ->whereIn('course_id', $courseIds)
+            ->orderByDesc('start_date')
+            ->limit(30)
+            ->get()
+            ->map(function (Exam $e) {
+                return [
+                    'id' => $e->id,
+                    'title' => $e->title,
+                    'course_title' => $e->course?->title ?? '',
+                    'start_date' => $e->start_date?->toISOString(),
+                    'status' => $e->status,
+                ];
+            });
+
+        return response()->json(['data' => $items]);
+    }
+
+    /**
+     * Learners enrolled in this instructor's courses (aggregated per student).
+     */
+    public function getLearnersForInstructor()
+    {
+        $courseIds = Course::where('instructor_id', Auth::id())->pluck('id');
+        if ($courseIds->isEmpty()) {
+            return response()->json(['data' => []]);
+        }
+
+        $rows = DB::table('enrollments')
+            ->join('users', 'enrollments.user_id', '=', 'users.id')
+            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+            ->whereIn('enrollments.course_id', $courseIds)
+            ->where('users.role', 'student')
+            ->select(
+                'users.id as user_id',
+                'users.name',
+                'users.email',
+                'courses.id as course_id',
+                'courses.title as course_title',
+                'enrollments.progress',
+                'enrollments.completed_at'
+            )
+            ->orderBy('users.name')
+            ->limit(300)
+            ->get();
+
+        $byUser = [];
+        foreach ($rows as $r) {
+            $id = (int) $r->user_id;
+            if (! isset($byUser[$id])) {
+                $byUser[$id] = [
+                    'id' => $id,
+                    'name' => $r->name,
+                    'email' => $r->email,
+                    'courses' => [],
+                    'avg_progress' => 0,
+                ];
+            }
+            $pct = $r->completed_at ? 100 : (int) $r->progress;
+            $byUser[$id]['courses'][] = [
+                'id' => (int) $r->course_id,
+                'title' => $r->course_title,
+                'progress' => $pct,
+            ];
+        }
+        foreach ($byUser as &$u) {
+            $n = count($u['courses']);
+            $u['avg_progress'] = $n ? (int) round(array_sum(array_column($u['courses'], 'progress')) / $n) : 0;
+        }
+        unset($u);
+
+        return response()->json(['data' => array_values($byUser)]);
+    }
+
+    /**
+     * Get enrollments for instructor's courses (shows recent enrollment activity)
+     */
+    public function getEnrollmentsForInstructor()
+    {
+        $courseIds = Course::where('instructor_id', Auth::id())->pluck('id');
+        if ($courseIds->isEmpty()) {
+            return response()->json(['data' => []]);
+        }
+
+        $enrollments = DB::table('enrollments')
+            ->join('users', 'enrollments.user_id', '=', 'users.id')
+            ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+            ->whereIn('enrollments.course_id', $courseIds)
+            ->where('users.role', 'student')
+            ->select(
+                'enrollments.id',
+                'enrollments.user_id',
+                'enrollments.course_id',
+                'enrollments.progress',
+                'enrollments.completed_at',
+                'enrollments.created_at as enrolled_at',
+                'users.name as student_name',
+                'users.email as student_email',
+                'courses.title as course_title'
+            )
+            ->orderByDesc('enrollments.created_at')
+            ->limit(100)
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'id' => $enrollment->id,
+                    'student_id' => $enrollment->user_id,
+                    'student_name' => $enrollment->student_name,
+                    'student_email' => $enrollment->student_email,
+                    'course_id' => $enrollment->course_id,
+                    'course_title' => $enrollment->course_title,
+                    'progress' => (int) $enrollment->progress,
+                    'completed_at' => $enrollment->completed_at ? $enrollment->completed_at->toISOString() : null,
+                    'enrolled_at' => $enrollment->enrolled_at ? $enrollment->enrolled_at->toISOString() : null,
+                    'status' => $enrollment->completed_at ? 'completed' : ($enrollment->progress > 0 ? 'in_progress' : 'enrolled'),
+                ];
+            });
+
+        return response()->json(['data' => $enrollments]);
     }
 }

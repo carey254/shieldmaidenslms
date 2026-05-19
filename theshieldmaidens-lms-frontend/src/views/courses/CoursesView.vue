@@ -79,15 +79,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedCourse = ref(null)
+
+// Initialize search query from URL parameter
+onMounted(() => {
+  if (route.query.search) {
+    searchQuery.value = route.query.search
+  }
+})
 
 // Course categories matching the curriculum
 const categories = ref([

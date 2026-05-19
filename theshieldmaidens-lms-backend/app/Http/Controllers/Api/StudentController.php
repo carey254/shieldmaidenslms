@@ -15,6 +15,10 @@ use App\Models\Opportunity;
 use App\Models\Notification;
 use App\Models\Announcement;
 use App\Models\ClassSession;
+use App\Models\Submission;
+use App\Models\Assignment;
+use App\Models\Discussion;
+use App\Models\Group;
 
 class StudentController extends Controller
 {
@@ -437,5 +441,134 @@ class StudentController extends Controller
             });
 
         return response()->json(['sessions' => $sessions]);
+    }
+
+    /**
+     * Get student's submissions (quizzes and assignments)
+     */
+    public function getSubmissions()
+    {
+        $student = Auth::user();
+
+        $submissions = Submission::where('user_id', $student->id)
+            ->with(['assignment' => function ($q) {
+                $q->select('id', 'title', 'due_date', 'max_score', 'passing_score');
+            }])
+            ->orderByDesc('submitted_at')
+            ->get()
+            ->map(function ($submission) {
+                return [
+                    'id' => $submission->id,
+                    'title' => $submission->assignment ? $submission->assignment->title : 'Unknown Assignment',
+                    'submittedDate' => $submission->submitted_at ? $submission->submitted_at->format('F j, Y') : 'N/A',
+                    'status' => ucfirst($submission->status),
+                    'score' => $submission->score ? $submission->score . '/' . ($submission->assignment ? $submission->assignment->max_score : 100) : null,
+                ];
+            });
+
+        return response()->json($submissions);
+    }
+
+    /**
+     * Get community discussions
+     */
+    public function getCommunity()
+    {
+        $student = Auth::user();
+
+        // Get enrolled course IDs
+        $enrolledCourseIds = DB::table('enrollments')
+            ->where('user_id', $student->id)
+            ->pluck('course_id');
+
+        // Get discussions from enrolled courses or general discussions
+        $discussions = Discussion::query()
+            ->where(function ($query) use ($enrolledCourseIds) {
+                $query->whereNull('course_id')
+                      ->orWhereIn('course_id', $enrolledCourseIds);
+            })
+            ->notLocked()
+            ->with(['user:id,name', 'course:id,title'])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get()
+            ->map(function ($discussion) {
+                return [
+                    'id' => $discussion->id,
+                    'title' => $discussion->title,
+                    'author' => $discussion->user ? $discussion->user->name : 'Unknown',
+                    'preview' => substr(strip_tags($discussion->content), 0, 100) . '...',
+                    'replies_count' => $discussion->replies_count,
+                    'views' => $discussion->views,
+                    'category' => $discussion->category,
+                    'course' => $discussion->course ? $discussion->course->title : null,
+                    'created_at' => $discussion->created_at->toISOString(),
+                ];
+            });
+
+        return response()->json($discussions);
+    }
+
+    /**
+     * Get student's certificates (only for completed courses)
+     */
+    public function getCertificates()
+    {
+        $student = Auth::user();
+
+        // Get enrollments where course is completed
+        $completedEnrollments = Enrollment::where('user_id', $student->id)
+            ->whereNotNull('completed_at')
+            ->where('status', 'completed')
+            ->with(['course' => function ($q) {
+                $q->select('id', 'title', 'category');
+            }])
+            ->get()
+            ->map(function ($enrollment) {
+                return [
+                    'id' => $enrollment->id,
+                    'title' => $enrollment->course ? $enrollment->course->title : 'Course',
+                    'completedDate' => $enrollment->completed_at ? $enrollment->completed_at->format('F j, Y') : 'N/A',
+                    'certificateId' => 'CERT-' . strtoupper(substr(md5($enrollment->id . $enrollment->course_id), 0, 8)),
+                ];
+            });
+
+        return response()->json($completedEnrollments);
+    }
+
+    /**
+     * Get student's groups (assigned by facilitator)
+     */
+    public function getGroups()
+    {
+        $student = Auth::user();
+
+        // Get groups the student is a member of
+        $groups = Group::query()
+            ->active()
+            ->whereHas('members', function ($query) use ($student) {
+                $query->where('user_id', $student->id);
+            })
+            ->with(['facilitator:id,name', 'course:id,title'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($group) {
+                $isMember = $group->members()->where('user_id', $student->id)->exists();
+
+                return [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'description' => $group->description,
+                    'memberCount' => $group->member_count,
+                    'maxMembers' => $group->max_members,
+                    'isJoined' => $isMember,
+                    'facilitator' => $group->facilitator ? $group->facilitator->name : null,
+                    'course' => $group->course ? $group->course->title : null,
+                    'code' => $group->code,
+                ];
+            });
+
+        return response()->json($groups);
     }
 }

@@ -74,6 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/class-sessions', [InstructorController::class, 'storeClassSession']);
         Route::put('/class-sessions/{id}', [InstructorController::class, 'updateClassSession']);
         Route::delete('/class-sessions/{id}', [InstructorController::class, 'deleteClassSession']);
+        Route::get('/assignments', [InstructorController::class, 'getAssignmentsForInstructor']);
+        Route::get('/exams', [InstructorController::class, 'getExamsForInstructor']);
+        Route::get('/learners', [InstructorController::class, 'getLearnersForInstructor']);
+        Route::get('/enrollments', [InstructorController::class, 'getEnrollmentsForInstructor']);
     });
     
     // Facilitator routes (require facilitator role)
@@ -92,6 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/class-sessions', [InstructorController::class, 'storeClassSession']);
         Route::put('/class-sessions/{id}', [InstructorController::class, 'updateClassSession']);
         Route::delete('/class-sessions/{id}', [InstructorController::class, 'deleteClassSession']);
+        Route::get('/assignments', [InstructorController::class, 'getAssignmentsForInstructor']);
+        Route::get('/exams', [InstructorController::class, 'getExamsForInstructor']);
+        Route::get('/learners', [InstructorController::class, 'getLearnersForInstructor']);
+        Route::get('/enrollments', [InstructorController::class, 'getEnrollmentsForInstructor']);
     });
     
     // Student routes (require student role)
@@ -108,6 +116,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/opportunities', [StudentController::class, 'getOpportunities']);
         Route::get('/notifications', [StudentController::class, 'getNotifications']);
         Route::get('/announcements', [StudentController::class, 'getAnnouncements']);
+        Route::get('/submissions', [StudentController::class, 'getSubmissions']);
+        Route::get('/community', [StudentController::class, 'getCommunity']);
+        Route::get('/certificates', [StudentController::class, 'getCertificates']);
+        Route::get('/groups', [StudentController::class, 'getGroups']);
     });
     
     // Admin routes (require admin role)

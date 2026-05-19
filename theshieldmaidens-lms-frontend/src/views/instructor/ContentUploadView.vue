@@ -442,7 +442,7 @@ const formatFileSize = (bytes) => {
 }
 
 .browse-btn {
-  background: #1a365d;
+  background: #f97316;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -453,7 +453,7 @@ const formatFileSize = (bytes) => {
 }
 
 .browse-btn:hover {
-  background: #2c5282;
+  background: #ea580c;
 }
 
 .uploaded-list {
@@ -461,7 +461,7 @@ const formatFileSize = (bytes) => {
 }
 
 .uploaded-list h4 {
-  color: #1a365d;
+  color: #f97316;
   margin-bottom: 1rem;
 }
 
@@ -482,7 +482,7 @@ const formatFileSize = (bytes) => {
 }
 
 .item-info i {
-  color: #1a365d;
+  color: #f97316;
   font-size: 1.25rem;
 }
 
@@ -537,7 +537,7 @@ const formatFileSize = (bytes) => {
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #1a365d;
+  border-color: #f97316;
 }
 
 .form-textarea {
@@ -557,7 +557,7 @@ const formatFileSize = (bytes) => {
 }
 
 .section-header h4 {
-  color: #1a365d;
+  color: #f97316;
   margin: 0;
 }
 
@@ -600,12 +600,12 @@ const formatFileSize = (bytes) => {
 }
 
 .btn-primary {
-  background: #1a365d;
+  background: #f97316;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #2c5282;
+  background: #ea580c;
 }
 
 .btn-sm {
@@ -635,7 +635,7 @@ const formatFileSize = (bytes) => {
 }
 
 .no-course-selected h3 {
-  color: #1a365d;
+  color: #f97316;
   margin-bottom: 0.5rem;
 }
 

@@ -45,6 +45,38 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Test Admin Dashboard' }
   },
 
+  // Instructor: newly added pages to avoid 404s
+  {
+    path: '/instructor/assessments',
+    name: 'instructor-assessments',
+    component: () => import('@/views/instructor/AssessmentsView.vue'),
+    meta: { requiresAuth: true, requiresInstructor: true, title: 'Assessments - The Shield Maidens' }
+  },
+  {
+    path: '/instructor/learners',
+    name: 'instructor-learners',
+    component: () => import('@/views/instructor/LearnersView.vue'),
+    meta: { requiresAuth: true, requiresInstructor: true, title: 'Learners - The Shield Maidens' }
+  },
+  {
+    path: '/instructor/analytics',
+    name: 'instructor-analytics',
+    component: () => import('@/views/instructor/AnalyticsView.vue'),
+    meta: { requiresAuth: true, requiresInstructor: true, title: 'Analytics - The Shield Maidens' }
+  },
+  {
+    path: '/instructor/messages',
+    name: 'instructor-messages',
+    component: () => import('@/views/instructor/MessagesView.vue'),
+    meta: { requiresAuth: true, requiresInstructor: true, title: 'Messages - The Shield Maidens' }
+  },
+  {
+    path: '/instructor/enrollments',
+    name: 'instructor-enrollments',
+    component: () => import('@/views/instructor/EnrollmentsView.vue'),
+    meta: { requiresAuth: true, requiresInstructor: true, title: 'Enrollments - The Shield Maidens' }
+  },
+
   {
 
     path: '/login',

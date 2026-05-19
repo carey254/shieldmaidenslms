@@ -1,35 +1,78 @@
 <template>
   <div class="groups">
-    <div class="page-header">
-      <button @click="goBack" class="back-btn">
-        ← Back to Dashboard
-      </button>
-      <h1>Groups</h1>
-    </div>
-    
-    <div class="groups-container">
-      <div class="group-card">
-        <h3>Digital Safety Group</h3>
-        <p class="group-members">25 members</p>
-        <p class="group-description">Learn about online safety and privacy best practices</p>
-        <button class="join-btn">Join Group</button>
+    <!-- LEFT SIDEBAR -->
+    <div class="left-sidebar">
+      <div class="logo" @click="goToDashboard">
+        <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo-image" />
+        <span class="logo-text">Shield Maidens</span>
       </div>
       
-      <div class="group-card">
-        <h3>Cybersecurity Basics</h3>
-        <p class="group-members">18 members</p>
-        <p class="group-description">Fundamental cybersecurity concepts and practices</p>
-        <button class="join-btn">Join Group</button>
-      </div>
+      <nav class="nav-menu">
+        <div class="nav-column">
+          <div class="nav-item" @click="handleNavigation('/dashboard')">
+            <span>Dashboard</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/courses')">
+            <span>Explore Courses</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/sessions')">
+            <span>Class Sessions</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/submissions')">
+            <span>Submissions</span>
+          </div>
+          <div class="nav-item active" @click="handleNavigation('/groups')">
+            <span>Groups</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/community')">
+            <span>Community</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/certificates')">
+            <span>Certificates</span>
+          </div>
+          <div class="nav-item" @click="handleNavigation('/my-courses')">
+            <span>My Courses</span>
+          </div>
+        </div>
+      </nav>
       
-      <div class="group-card">
-        <h3>Privacy Champions</h3>
-        <p class="group-members">32 members</p>
-        <p class="group-description">Advanced privacy protection techniques</p>
-        <button class="joined-btn">Already Joined</button>
+      <div class="sidebar-bottom">
+        <div class="current-course">
+          <div class="course-label">Welcome back,</div>
+          <div class="course-name">{{ currentUser?.name ?? currentUser?.username ?? 'Student' }}</div>
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+      <div class="page-header">
+        <h1>Groups</h1>
+      </div>
+      
+      <div class="groups-container">
+        <!-- Loading state -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner">⏳ Loading groups...</div>
+        </div>
+        
+        <!-- Empty state -->
+        <div v-else-if="groups.length === 0" class="empty-state">
+          <div class="empty-icon">👥</div>
+          <p class="empty-text">No groups available yet.</p>
+          <p class="empty-hint">Groups will appear here when they are created by instructors.</p>
+        </div>
+        
+        <!-- Groups list -->
+        <div v-else class="group-card" v-for="group in groups" :key="group.id">
+          <h3>{{ group.name }}</h3>
+          <p class="group-members">{{ group.memberCount }} members</p>
+          <p class="group-description">{{ group.description }}</p>
+          <button v-if="group.isJoined" class="joined-btn">Already Joined</button>
+          <button v-else class="join-btn">Join Group</button>
+        </div>
+      </div>
+    </div>
     
     <!-- FLOATING ACTION BUTTONS -->
     <div class="floating-buttons">
@@ -159,13 +202,42 @@
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { apiService } from '@/services/api'
+import { PUBLIC_BRAND_LOGO } from '@/config/branding'
+import { API_BASE_URL } from '@/config/api'
+
+interface User {
+  name?: string
+  username?: string
+}
+
+interface Group {
+  id: string | number
+  name: string
+  memberCount: number
+  description: string
+  isJoined: boolean
+}
+
+interface FAQ {
+  question: string
+  answer: string
+  open: boolean
+}
 
 const router = useRouter()
+
+// State
+const currentUser = ref<User | null>(null)
+const groups = ref<Group[]>([])
+const isLoading = ref(true)
 
 // Modal states
 const showAccessibility = ref(false)
@@ -204,9 +276,43 @@ const faqs = ref([
   }
 ])
 
-const goBack = () => {
+const handleNavigation = (route: string) => {
+  router.push(route)
+}
+
+const goToDashboard = () => {
   router.push('/dashboard')
 }
+
+const loadCurrentUser = () => {
+  try {
+    const user = apiService.getCurrentUserFromStorage()
+    currentUser.value = user
+  } catch (error) {
+    console.error('Error loading current user:', error)
+  }
+}
+
+const loadGroups = async () => {
+  groups.value = []
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const { data } = await axios.get(`${API_BASE_URL}/student/groups`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    groups.value = (Array.isArray(data) ? data : []) as Group[]
+  } catch (error) {
+    console.error('Error loading groups:', error)
+    groups.value = []
+  }
+}
+
+onMounted(async () => {
+  loadCurrentUser()
+  await loadGroups()
+  isLoading.value = false
+})
 
 // Modal functions
 const openAccessibility = () => {
@@ -283,10 +389,155 @@ const submitHelpForm = () => {
 }
 </script>
 
-<style>
+<style scoped>
 .groups {
+  display: flex;
+  min-height: 100dvh;
+  background: #f5f5f5;
+}
+
+/* LEFT SIDEBAR */
+.left-sidebar {
+  width: 250px;
+  background: #000000;
+  color: white;
   padding: 20px;
-  padding-bottom: 2rem;
+  min-height: 100dvh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.logo-image {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.nav-menu {
+  flex: 1;
+}
+
+.nav-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #333333;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.active {
+  background-color: #333333;
+  border-left: 4px solid white;
+  padding-left: 8px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.current-course {
+  margin-bottom: 15px;
+}
+
+.course-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #b2dfdb;
+  margin-bottom: 5px;
+}
+
+.course-name {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* Loading and Empty States */
+.loading-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px dashed #ddd;
+}
+
+.loading-spinner {
+  font-size: 18px;
+  color: #666;
+  margin: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px dashed #ddd;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  color: #666;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.empty-hint {
+  color: #999;
+  margin: 0;
+  font-size: 14px;
 }
 
 .page-header {
@@ -362,7 +613,6 @@ const submitHelpForm = () => {
 .join-btn:hover {
   background: #00695c;
 }
-</style>
 
 /* FLOATING ACTION BUTTONS */
 .floating-buttons {
@@ -682,5 +932,6 @@ input:checked + .slider:before {
 
 :global(.screen-reader) {
   /* Screen reader specific styles */
+  line-height: 1.5;
 }
 </style>

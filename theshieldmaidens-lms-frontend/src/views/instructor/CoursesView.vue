@@ -94,7 +94,7 @@ onMounted(load)
 <style scoped>
 .page {
   padding: 22px 22px 40px;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--dark);
 }
 
 .head {
@@ -113,16 +113,16 @@ onMounted(load)
 
 .subtitle {
   margin-top: 4px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--gray);
   font-size: 13px;
 }
 
 .btn {
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--light-gray);
+  background: #ffffff;
+  color: var(--dark);
   cursor: pointer;
   font-weight: 800;
   font-size: 12px;
@@ -142,15 +142,15 @@ onMounted(load)
   cursor: pointer;
   border-radius: 20px;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  border: 1px solid var(--light-gray);
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
 .tile:hover {
   transform: translateY(-1px);
-  border-color: rgba(171, 145, 255, 0.35);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(249, 115, 22, 0.3);
+  background: #fff7ed;
 }
 
 .top {
@@ -170,19 +170,20 @@ onMounted(load)
   border-radius: 999px;
   font-size: 11px;
   font-weight: 900;
-  color: rgba(255, 232, 173, 0.95);
-  background: rgba(255, 232, 173, 0.12);
-  border: 1px solid rgba(255, 232, 173, 0.18);
+  color: #5b3a00;
+  background: rgba(255, 232, 173, 0.18);
+  border: 1px solid rgba(255, 232, 173, 0.25);
   white-space: nowrap;
 }
 
 .desc {
   margin-top: 8px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #475569;
   font-size: 12px;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -192,7 +193,7 @@ onMounted(load)
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #64748b;
   font-size: 12px;
   font-weight: 800;
 }
@@ -201,9 +202,9 @@ onMounted(load)
   grid-column: 1 / -1;
   border-radius: 20px;
   padding: 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.62);
+  border: 1px dashed var(--light-gray);
+  background: #ffffff;
+  color: var(--gray);
 }
 
 @media (max-width: 1100px) {

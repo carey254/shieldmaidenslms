@@ -5,30 +5,37 @@
         <div class="footer-logo" @click="goToDashboard">
           <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="logo" />
           <p>Dedicated to creating safer digital spaces for everyone.</p>
+          <div class="social-links">
+            <a href="#" class="social-link">Facebook</a>
+            <a href="#" class="social-link">Twitter</a>
+            <a href="#" class="social-link">Instagram</a>
+            <a href="#" class="social-link">LinkedIn</a>
+          </div>
         </div>
         
         <div class="footer-links">
           <div class="links-column">
-            <h4>Follow Us</h4>
+            <h4>Quick Links</h4>
             <ul>
-              <li><a href="#">Facebook</a></li>
-              <li><a href="#">Twitter</a></li>
-              <li><a href="#">Instagram</a></li>
-              <li><a href="#">LinkedIn</a></li>
+              <li><router-link to="/">Home</router-link></li>
+              <li><router-link to="/courses">Courses</router-link></li>
+              <li><router-link to="/support">Support</router-link></li>
+              <li><router-link to="/login">Login</router-link></li>
             </ul>
           </div>
           
           <div class="links-column">
-            <h4>Contact Us</h4>
+            <h4>Legal</h4>
             <ul>
               <li><a href="#">Privacy Policy</a></li>
               <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Data Usage</a></li>
               <li><a href="#">Code of Conduct</a></li>
             </ul>
           </div>
           
           <div class="links-column">
-            <h4>Emergency Contacts</h4>
+            <h4>Contact Us</h4>
             <div class="contact-info">
               <p><strong>Emergency Services:</strong> 1195</p>
               <p><strong>Inquiries:</strong> +254 702 997534</p>
@@ -41,15 +48,6 @@
       <div class="footer-bottom">
         <div class="copyright">
           © {{ currentYear }} The Shield Maidens. All rights reserved.
-        </div>
-        <div class="legal-links">
-          <a href="#">Privacy Policy</a>
-          <span>•</span>
-          <a href="#">Terms of Service</a>
-          <span>•</span>
-          <a href="#">Data Usage</a>
-          <span>•</span>
-          <a href="#">Code of Conduct</a>
         </div>
         <div class="emergency">
           <strong>Emergency:</strong> 1195
@@ -75,9 +73,9 @@ const goToDashboard = () => {
 
 <style scoped>
 .footer {
-  background-color: #000000; /* Black instead of navy blue */
-  color: #f7fafc; /* Cream white */
-  padding: 3rem 1rem 1.5rem;
+  background-color: #000000;
+  color: #f7fafc;
+  padding: 4rem 1rem 2rem;
   margin-top: auto;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -91,15 +89,15 @@ const goToDashboard = () => {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
+  gap: 3rem;
+  margin-bottom: 3rem;
+  padding-bottom: 3rem;
   border-bottom: 1px solid rgba(247, 250, 252, 0.1);
 }
 
 .footer-logo {
   flex: 1;
-  min-width: 250px;
+  min-width: 280px;
   text-align: left;
   cursor: pointer;
   transition: opacity 0.2s ease;
@@ -110,27 +108,45 @@ const goToDashboard = () => {
 }
 
 .logo {
-  max-width: 180px;
+  max-width: 200px;
   height: auto;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .footer-logo p {
   color: rgba(247, 250, 252, 0.8);
   line-height: 1.6;
-  max-width: 300px;
+  max-width: 320px;
+  margin-bottom: 1.5rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.social-link {
+  color: rgba(247, 250, 252, 0.8);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.social-link:hover {
+  color: #ed8936;
 }
 
 .footer-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 3rem;
+  gap: 4rem;
   flex: 2;
   justify-content: space-between;
 }
 
 .links-column {
-  min-width: 150px;
+  min-width: 180px;
+  flex: 1;
 }
 
 .links-column h4 {
@@ -148,7 +164,7 @@ const goToDashboard = () => {
   bottom: 0;
   width: 40px;
   height: 2px;
-  background-color: #ed8936; /* Orange accent */
+  background-color: #ed8936;
 }
 
 .links-column ul {
@@ -165,16 +181,18 @@ const goToDashboard = () => {
   color: rgba(247, 250, 252, 0.8);
   text-decoration: none;
   transition: color 0.3s ease;
+  font-size: 0.95rem;
 }
 
 .links-column a:hover {
-  color: #ed8936; /* Orange accent */
+  color: #ed8936;
 }
 
 .contact-info p {
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
   color: rgba(247, 250, 252, 0.8);
   line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .contact-info strong {
@@ -187,7 +205,7 @@ const goToDashboard = () => {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding-top: 1.5rem;
+  padding-top: 2rem;
   font-size: 0.9rem;
   color: rgba(247, 250, 252, 0.7);
 }
@@ -196,31 +214,14 @@ const goToDashboard = () => {
   margin: 0.5rem 0;
 }
 
-.legal-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0.5rem 0;
-}
-
-.legal-links a {
-  color: rgba(247, 250, 252, 0.8);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.legal-links a:hover {
-  color: #ed8936; /* Orange accent */
-}
-
 .emergency {
-  background-color: rgba(237, 137, 54, 0.1);
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  background-color: rgba(237, 137, 54, 0.15);
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
   margin: 0.5rem 0;
   font-weight: 600;
-  color: #ed8936; /* Orange accent */
+  color: #ed8936;
+  border: 1px solid rgba(237, 137, 54, 0.3);
 }
 
 .emergency strong {
@@ -230,6 +231,7 @@ const goToDashboard = () => {
 @media (max-width: 768px) {
   .footer-top {
     flex-direction: column;
+    gap: 2rem;
   }
   
   .footer-logo {
@@ -241,20 +243,29 @@ const goToDashboard = () => {
     max-width: 100%;
   }
   
+  .social-links {
+    justify-content: center;
+  }
+  
   .footer-links {
     flex-direction: column;
     gap: 2rem;
     margin-top: 2rem;
   }
   
+  .links-column {
+    text-align: center;
+  }
+  
+  .links-column h4::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
   .footer-bottom {
     flex-direction: column;
     text-align: center;
     gap: 1rem;
-  }
-  
-  .legal-links {
-    justify-content: center;
   }
 }
 </style>

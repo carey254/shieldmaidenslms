@@ -1,42 +1,5 @@
 <template>
   <div class="header-container">
-    <!-- Top Contact Bar -->
-    <div class="contact-bar">
-      <div class="contact-info">
-        <div class="language-selector">
-          <div class="language-selected" @click="toggleLanguageDropdown">
-            English
-            <svg class="dropdown-arrow" :class="{ 'rotated': showLanguageDropdown }" width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1.5L6 6.5L11 1.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div v-if="showLanguageDropdown" class="language-dropdown" @mouseleave="hideLanguageDropdown">
-            <div 
-              v-for="lang in languages" 
-              :key="lang.value" 
-              class="language-option"
-              :class="{ 'active': selectedLanguage === lang.value }"
-              @click="selectLanguage(lang.value)"
-            >
-              {{ lang.label }}
-            </div>
-          </div>
-        </div>
-        <div class="contact-item">
-          <span class="contact-label"></span>
-          <span class="contact-value">Emergency Services: 1195</span>
-        </div>
-        <div class="contact-item">
-          <span class="contact-label">Inquiries</span>
-          <span class="contact-value">+254 702 997534</span>
-        </div>
-        <div class="contact-item">
-          <span class="contact-label">Email Support</span>
-          <a href="mailto:support@theshieldmaidens.org" class="contact-email">support@theshieldmaidens.org</a>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Navigation -->
     <header class="header">
       <div class="logo">
@@ -51,27 +14,55 @@
           <router-link to="/support" class="nav-link">SUPPORT</router-link>
           <a href="https://theshieldmaidens.org/" target="_blank" class="nav-link external-link">Visit Our Website</a>
           <router-link to="/login" class="nav-link login-btn">Login</router-link>
+          
+          <!-- Language Dropdown -->
+          <div class="language-dropdown" :class="{ 'active': showLanguageDropdown }">
+            <div class="language-trigger" @click="toggleLanguageDropdown">
+              <span class="language-icon">🌐</span>
+              <span class="language-text">{{ currentLanguage.name }}</span>
+              <svg class="dropdown-arrow" :class="{ 'rotated': showLanguageDropdown }" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            
+            <div v-if="showLanguageDropdown" class="language-menu">
+              <div 
+                v-for="lang in languages" 
+                :key="lang.code" 
+                class="language-option"
+                :class="{ 'active': lang.code === currentLanguage.code }"
+                @click.stop="selectLanguage(lang)"
+              >
+                <span class="flag">{{ lang.flag }}</span>
+                <span class="lang-name">{{ lang.name }}</span>
+              </div>
+            </div>
+          </div>
       </nav>
     </header>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 
-const router = useRouter();
-
-const selectedLanguage = ref('en');
+// Language state
 const showLanguageDropdown = ref(false);
+const currentLanguage = ref({
+  code: 'en',
+  name: 'English',
+  flag: '🇺🇸'
+});
 
-const languages = [
-  { value: 'en', label: 'English' },
-  { value: 'sw', label: 'Swahili' },
-  { value: 'ar', label: 'العربية (Arabic)' }
-];
+const languages = ref([
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'ar', name: 'العربية', flag: '🇸🇦' }
+]);
 
+// Language functions
 const toggleLanguageDropdown = () => {
   showLanguageDropdown.value = !showLanguageDropdown.value;
 };
@@ -80,12 +71,29 @@ const hideLanguageDropdown = () => {
   showLanguageDropdown.value = false;
 };
 
-const selectLanguage = (lang) => {
-  selectedLanguage.value = lang;
-  showLanguageDropdown.value = false;
-  // TODO: Implement language change logic
-  console.log('Language changed to:', lang);
+const selectLanguage = (lang: any) => {
+  currentLanguage.value = lang;
+  hideLanguageDropdown();
+  // TODO: Implement actual language change logic
+  console.log('Language changed to:', lang.name);
 };
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  const dropdown = target.closest('.language-dropdown');
+  if (!dropdown) {
+    hideLanguageDropdown();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -97,6 +105,7 @@ const selectLanguage = (lang) => {
   left: 0;
   z-index: 1000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  pointer-events: auto !important;
 }
 
 /* Body styles with background */
@@ -130,7 +139,7 @@ body::before {
   flex-direction: column;
   background-color: rgba(255, 255, 255, 0.95);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  padding-top: 130px !important; /* Restored to 130px since contact bar is back */
+  padding-top: 80px !important; /* Reduced since contact bar is removed */
   margin-top: 0 !important;
   background-color: rgba(255, 255, 255, 0.95);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
@@ -155,113 +164,6 @@ main {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Top Contact Bar */
-.contact-bar {
-  background-color: #000000; /* Black instead of orange */
-  color: #ffffff;
-  padding: 0.5rem 2rem;
-  font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.contact-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0;
-}
-
-.language-selector {
-  position: relative;
-  min-width: 120px;
-  z-index: 1001;
-}
-
-.language-selected {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.25rem 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-  min-height: 32px;
-}
-
-.language-selected:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.dropdown-arrow {
-  margin-left: 8px;
-  transition: transform 0.2s;
-}
-
-.dropdown-arrow.rotated {
-  transform: rotate(180deg);
-}
-
-.language-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin-top: 4px;
-  z-index: 1000;
-}
-
-.language-option {
-  padding: 0.5rem 0.75rem;
-  color: #1a365d;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-
-.language-option:hover {
-  background-color: #f0f4f8;
-}
-
-.language-option.active {
-  background-color: #e2e8f0;
-  font-weight: 500;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  margin-left: 2rem;
-  color: #ffffff;
-  font-size: 0.9rem;
-}
-
-.contact-label {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.contact-value, .contact-email {
-  color: #ffffff;
-  text-decoration: none;
-  font-weight: 400;
-  transition: color 0.2s;
-}
-
-.contact-email:hover {
-  color: #ed8936; /* Orange on hover */
-  text-decoration: underline;
-}
-
 /* Main Navigation */
 .header {
   display: flex;
@@ -272,6 +174,7 @@ main {
   color: #1a365d; /* Navy blue */
   min-height: 80px;
   position: relative;
+  pointer-events: auto !important;
 }
 
 .logo {
@@ -316,6 +219,7 @@ main {
   position: relative;
   z-index: 5;
   max-width: 65%;
+  pointer-events: auto !important;
 }
 
 .nav-link {
@@ -328,6 +232,8 @@ main {
   border: 1px solid transparent;
   font-size: 0.75rem;
   white-space: nowrap;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .nav-link:hover {
@@ -372,24 +278,117 @@ main {
   border-color: #333333;
 }
 
+/* Language Dropdown Styles */
+.language-dropdown {
+  position: relative;
+  z-index: 10001;
+  pointer-events: auto !important;
+}
+
+.language-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 0.5rem;
+  pointer-events: auto !important;
+  user-select: none;
+}
+
+.language-trigger:hover {
+  background: #f8f9fa;
+  border-color: #ced4da;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.language-dropdown.active .language-trigger {
+  background: #f8f9fa;
+  border-color: #ff9900;
+  box-shadow: 0 2px 8px rgba(255, 153, 0, 0.2);
+}
+
+.language-icon {
+  font-size: 16px;
+}
+
+.language-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.dropdown-arrow {
+  color: #666;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dropdown-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.language-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 10000;
+  pointer-events: auto;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.language-option:last-child {
+  border-bottom: none;
+}
+
+.language-option:hover {
+  background: #f8f9fa;
+}
+
+.language-option.active {
+  background: #fff5f5;
+  color: #ff9900;
+}
+
+.flag {
+  font-size: 18px;
+}
+
+.lang-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.language-option.active .lang-name {
+  color: #ff9900;
+  font-weight: 600;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .contact-bar {
-    display: none;
-  }
-
-  .contact-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
   .header {
     flex-direction: row;
     justify-content: center;
     padding: 0.75rem 1rem;
     min-height: 68px;
-    text-align: left;
   }
   
   .logo {
@@ -397,6 +396,10 @@ main {
   }
   
   .nav-links {
+    display: none;
+  }
+  
+  .language-dropdown {
     display: none;
   }
 }

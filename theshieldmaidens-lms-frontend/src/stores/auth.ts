@@ -118,12 +118,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value);
   const isAdmin = computed(() => !!(user.value?.is_admin || user.value?.role === 'admin'));
   const isInstructor = computed(
-    () => !!(
-      user.value?.is_instructor ||
-      user.value?.role === 'instructor' ||
-      user.value?.role === 'facilitator' ||
-      user.value?.email?.includes('instructor@')
-    )
+    () => !!(user.value?.is_instructor || user.value?.role === 'instructor' || user.value?.email?.includes('instructor@'))
   );
   const isStudent = computed(() => !isAdmin.value && !isInstructor.value);
   const userRole = computed(() => user.value?.role || 'student');
@@ -156,40 +151,12 @@ export const useAuthStore = defineStore('auth', () => {
       return !!(u.is_admin || u.role === 'admin');
     }
     if (expectedPortal === 'instructor') {
-      return !!(
-        u.is_instructor ||
-        u.role === 'instructor' ||
-        u.role === 'facilitator' ||
-        u.email?.includes('instructor@')
-      );
+      return !!(u.is_instructor || u.role === 'instructor' || u.email?.includes('instructor@'));
     }
     if (expectedPortal === 'student') {
-      return (
-        !u.is_admin &&
-        u.role !== 'facilitator' &&
-        !u.is_instructor &&
-        !u.email?.includes('instructor@') &&
-        (u.role === 'student' || u.role === 'user' || !u.role)
-      );
+      return !u.is_admin && !u.is_instructor && !u.email?.includes('instructor@') && (u.role === 'student' || u.role === 'user' || !u.role);
     }
     return true;
-  }
-
-  /** Post-login home route for this user (API user payload). */
-  function resolveRoleDashboard(u: any): string {
-    if (!u) return '/dashboard';
-    if (u.is_admin || u.role === 'admin') return '/admin/dashboard';
-    if (u.is_instructor || u.role === 'instructor' || u.role === 'facilitator') return '/instructor/dashboard';
-    return '/dashboard';
-  }
-
-  /** Only follow a saved ?redirect= if it belongs to that user's area (avoids admin landing on /dashboard). */
-  function returnUrlAllowedForUser(returnPath: string | null, u: any): returnPath is string {
-    if (!returnPath || !returnPath.startsWith('/')) return false;
-    if (u.is_admin || u.role === 'admin') return returnPath.startsWith('/admin');
-    if (u.is_instructor || u.role === 'instructor' || u.role === 'facilitator')
-      return returnPath.startsWith('/instructor');
-    return !returnPath.startsWith('/admin') && !returnPath.startsWith('/instructor');
   }
 
   // Actions
@@ -198,11 +165,6 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await login(email, password, { captchaToken: options?.captchaToken, loginAttempts: options?.loginAttempts });
 
       console.log('Login response:', response);
-      console.log('User data:', response.user);
-      console.log('User is_admin:', response.user?.is_admin);
-      console.log('User is_instructor:', response.user?.is_instructor);
-      console.log('User role:', response.user?.role);
-      console.log('User email:', response.user?.email);
 
       if (expectedPortal && !userMatchesPortal(expectedPortal, response.user)) {
         clearLocalAuth();
@@ -233,26 +195,22 @@ export const useAuthStore = defineStore('auth', () => {
       const savedReturn = returnUrl.value;
       returnUrl.value = null;
 
-      const roleDashboard = resolveRoleDashboard(user.value);
-      const isStudentUser =
-        !user.value?.is_admin &&
-        user.value?.role !== 'admin' &&
-        user.value?.role !== 'instructor' &&
-        user.value?.role !== 'facilitator' &&
-        !user.value?.is_instructor;
+      let roleDashboard = '/dashboard';
+      if (user.value?.is_admin) roleDashboard = '/admin/dashboard';
+      else if (user.value?.is_instructor || user.value?.email?.includes('instructor@')) roleDashboard = '/instructor/dashboard';
 
-      const pendingLearnPath = isStudentUser ? await finalizePendingCourseEnrollment() : null;
-
-      let destination = roleDashboard;
-      if (pendingLearnPath) {
-        destination = pendingLearnPath;
-      } else if (savedReturn && returnUrlAllowedForUser(savedReturn, user.value)) {
-        destination = savedReturn;
+      if (user.value?.is_admin || user.value?.is_instructor || user.value?.email?.includes('instructor@')) {
+        await router.push(savedReturn || roleDashboard);
+        return user.value;
       }
 
-      await router.push(
-        pendingLearnPath ? { path: pendingLearnPath, query: { enrolled: '1' } } : destination
-      );
+      const pendingLearnPath = await finalizePendingCourseEnrollment();
+
+      if (pendingLearnPath) {
+        await router.push({ path: pendingLearnPath, query: { enrolled: '1' } });
+      } else {
+        await router.push(savedReturn || roleDashboard);
+      }
 
       return user.value;
     } catch (error) {
@@ -404,6 +362,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginAction,
     registerAction,
     logoutAction,
+    logout: logoutAction, // Alias for consistency across codebase
     setReturnUrl,
     completeOAuthLogin,
     finalizePendingCourseEnrollment,

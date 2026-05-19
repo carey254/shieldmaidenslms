@@ -55,6 +55,32 @@
 
         <div class="dropdown-divider"></div>
 
+        <!-- Language Selector -->
+        <div class="language-section">
+          <div class="language-selector-trigger" @click="toggleLanguageDropdown">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ currentLanguageLabel }}</span>
+            <svg class="dropdown-arrow" :class="{ 'rotated': showLanguageDropdown }" width="12" height="8" viewBox="0 0 12 8" fill="none">
+              <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div v-if="showLanguageDropdown" class="language-dropdown-menu">
+            <div 
+              v-for="lang in languages" 
+              :key="lang.value" 
+              class="language-option"
+              :class="{ 'active': selectedLanguage === lang.value }"
+              @click="selectLanguage(lang.value)"
+            >
+              {{ lang.label }}
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
         <button @click="handleLogout" class="dropdown-item logout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -75,12 +101,27 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const showDropdown = ref(false)
+const showLanguageDropdown = ref(false)
+const selectedLanguage = ref('en')
+
+const languages = [
+  { value: 'en', label: 'English' },
+  { value: 'sw', label: 'Swahili' },
+  { value: 'fr', label: 'Français (French)' },
+  { value: 'ar', label: 'العربية (Arabic)' }
+]
+
+const currentLanguageLabel = computed(() => {
+  const lang = languages.find(l => l.value === selectedLanguage.value)
+  return lang ? lang.label : 'English'
+})
 
 // Close dropdown when clicking outside
 onMounted(() => {
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.user-profile-dropdown')) {
+    if (!e.target?.closest('.user-profile-dropdown')) {
       showDropdown.value = false
+      showLanguageDropdown.value = false
     }
   })
 })
@@ -99,10 +140,21 @@ const hideDropdown = () => {
   showDropdown.value = false
 }
 
+const toggleLanguageDropdown = () => {
+  showLanguageDropdown.value = !showLanguageDropdown.value
+}
+
+const selectLanguage = (lang: string) => {
+  selectedLanguage.value = lang
+  showLanguageDropdown.value = false
+  // TODO: Implement language change logic
+  console.log('Language changed to:', lang)
+}
+
 const getUserInitials = () => {
   if (!user.value?.name) return 'S'
   const names = user.value.name.split(' ')
-  return names.map(name => name.charAt(0).toUpperCase()).join('').slice(0, 2)
+  return names.map((name: string) => name.charAt(0).toUpperCase()).join('').slice(0, 2)
 }
 
 const handleLogout = async () => {
@@ -286,6 +338,62 @@ const handleLogout = async () => {
   height: 1px;
   background: #f0f0f0;
   margin: 0.5rem 0;
+}
+
+/* Language Selector Styles */
+.language-section {
+  padding: 0.5rem;
+}
+
+.language-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #333;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.language-selector-trigger:hover {
+  background: #f8f9fa;
+  color: #ff9900;
+}
+
+.language-dropdown-menu {
+  margin-top: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  z-index: 10000;
+  pointer-events: auto;
+}
+
+.language-option {
+  padding: 0.75rem 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.language-option:hover {
+  background: #e9ecef;
+  color: #ff9900;
+}
+
+.language-option.active {
+  background: #ff9900;
+  color: white;
 }
 
 /* Responsive */

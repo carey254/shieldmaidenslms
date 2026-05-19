@@ -4,13 +4,57 @@
     <section class="hero-section">
       <div class="hero-content">
         <div class="hero-left">
-          <div class="hero-brand">
-            <img :src="PUBLIC_BRAND_LOGO" alt="The Shield Maidens" class="hero-logo" />
+          <div class="learner-badge"></div>
+          <h1 class="hero-title">Learn new skills. Advance your career.</h1>
+          <p class="hero-subtitle">
+            <span class="typing-text">{{ currentTopic }}</span><span class="typing-cursor">|</span>
+          </p>
+          
+          <!-- Search Bar -->
+          <div class="hero-search">
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Search for a course..."
+              class="search-input"
+              @keyup.enter="handleSearch"
+            >
+            <button @click="handleSearch" class="search-btn">
+              <i class="fas fa-search"></i>
+              Search
+            </button>
           </div>
-          <p class="hero-subtitle">Empowering Young People with Digital Safety & Technology Skills</p>
-          <div class="cta-buttons">
-            <router-link to="/login" class="btn-primary">Sign In to Learn</router-link>
-            <router-link to="/register" class="btn-secondary">Create Account</router-link>
+
+          <!-- Statistics -->
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+              <div class="stat-info">
+                <div class="stat-value">Impact</div>
+                <div class="stat-label">Community Growth</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon"><i class="fas fa-users"></i></div>
+              <div class="stat-info">
+                <div class="stat-value">100+ Learners </div>
+                <div class="stat-label">Reached</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+              <div class="stat-info">
+                <div class="stat-value">Certificates Issued</div>
+                <div class="stat-label">Upon Completion</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon"><i class="fas fa-star"></i></div>
+              <div class="stat-info">
+                <div class="stat-value">4.8</div>
+                <div class="stat-label">Avg. rating</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -104,56 +148,200 @@
       </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features-section">
+    <!-- Popular Courses Section -->
+    <section class="courses-section">
       <div class="container">
-        <h2>Why Choose The Shield Maidens?</h2>
+        <h2 class="section-title">Our Courses</h2>
+        <p class="section-subtitle">Explore our most popular courses and start your learning journey today</p>
+        <div class="courses-grid">
+          <div 
+            v-for="course in popularCourses" 
+            :key="course.id" 
+            class="course-card"
+            @click="goToCourse(course.id)"
+          >
+            <div class="course-icon-wrapper">
+              <img v-if="course.image" :src="course.image" :alt="course.title" class="course-image" />
+              <div v-else class="course-emoji">{{ course.emoji }}</div>
+            </div>
+            <div class="course-category">{{ course.category }}</div>
+            <div class="course-content">
+              <h3>{{ course.title }}</h3>
+              <p class="course-description">{{ course.description }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="view-all-container">
+          <button @click="router.push('/courses')" class="view-all-btn">View All Courses</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Learn With Us Section -->
+    <section class="why-section">
+      <div class="container">
+        <h2 class="section-title">Why Learn With Us?</h2>
         <div class="features-grid">
           <div class="feature-card">
-            <div class="feature-icon"></div>
-            <h3>Digital Safety</h3>
-            <p>Learn essential online safety skills and protect yourself in digital world</p>
+            <div class="feature-icon">
+              <img src="/curriculum.png" alt="Comprehensive Curriculum" />
+            </div>
+            <h3>Comprehensive Curriculum</h3>
+            <p>Access a wide range of courses covering various topics</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon"></div>
-            <h3>Technology Skills</h3>
-            <p>Build fundamental tech skills that prepare you for the future</p>
+            <div class="feature-icon">
+              <img src="/practical.png" alt="Practical Learning" />
+            </div>
+            <h3>Practical Learning</h3>
+            <p>Hands-on projects and real-world applications</p>
           </div>
           <div class="feature-card">
-            <div class="feature-icon"></div>
-            <h3>Life Skills</h3>
-            <p>Develop confidence and communication skills for personal growth</p>
+            <div class="feature-icon">
+              <img src="/inclusive.png" alt="Inclusive Learning" />
+            </div>
+            <h3>Inclusive Learning</h3>
+            <p>We create accessible learning opportunities for everyone, regardless of background or ability</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <img src="/community.png" alt="Community Support" />
+            </div>
+            <h3>Community Support</h3>
+            <p>Join a supportive community of learners and mentors</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Welcome Section Above Footer -->
-    <section class="welcome-section">
+    <!-- CTA Section -->
+    <section class="cta-section">
       <div class="container">
-        <div class="welcome-content">
-          <p class="hero-subtitle">Empowering Young People with Digital Safety & Technology Skills</p>
+        <div class="cta-content">
+          <h2>Ready to start learning?</h2>
+          <p>Join thousands of learners already improving their skills</p>
           <div class="cta-buttons">
-            <router-link to="/courses" class="btn-primary">View Our Curriculum</router-link>
+            <router-link to="/register" class="btn-primary">Get Started Now</router-link>
+            <router-link to="/courses" class="btn-primary">View All Courses</router-link>
           </div>
         </div>
       </div>
     </section>
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { API_BASE_URL } from '@/config/api';
 import { PUBLIC_BRAND_LOGO } from '@/config/branding';
 import axios from 'axios';
 
+const router = useRouter();
 const authStore = useAuthStore();
 
 const announcements = ref([]);
 const opportunities = ref([]);
 const selectedAnnouncement = ref(null);
+const searchQuery = ref('');
+
+// Typing animation for topics
+const topics = [
+  'Build Digital Confidence.',
+  'Stay Safe Online.',
+  'Learn digital safety and cybersecurity skills to navigate and protect yourself in today\'s connected world.',
+  'Technology for Everyone.',
+  'Empowering Inclusive Learning.',
+  'We support accessibility and inclusion by creating learning opportunities that are open, supportive, and accessible to all learners.',
+  'Code the Future.',
+  'Create Real Solutions.',
+  'Gain practical coding and technology skills through hands-on learning designed to help you grow and innovate.'
+];
+const currentTopic = ref('');
+const topicIndex = ref(0);
+const charIndex = ref(0);
+const isDeleting = ref(false);
+
+const typeTopic = () => {
+  const currentTopicText = topics[topicIndex.value];
+  
+  if (isDeleting.value) {
+    charIndex.value--;
+    if (charIndex.value < 0) charIndex.value = 0;
+    currentTopic.value = currentTopicText.substring(0, charIndex.value);
+  } else {
+    charIndex.value++;
+    if (charIndex.value > currentTopicText.length) charIndex.value = currentTopicText.length;
+    currentTopic.value = currentTopicText.substring(0, charIndex.value);
+  }
+
+  let typeSpeed = isDeleting.value ? 10 : 15;
+
+  if (!isDeleting.value && charIndex.value >= currentTopicText.length) {
+    typeSpeed = 800;
+    isDeleting.value = true;
+  } else if (isDeleting.value && charIndex.value <= 0) {
+    isDeleting.value = false;
+    topicIndex.value = (topicIndex.value + 1) % topics.length;
+    charIndex.value = 0;
+    typeSpeed = 200;
+  }
+
+  setTimeout(typeTopic, typeSpeed);
+};
+
+onMounted(() => {
+  typeTopic();
+  fetchAnnouncements();
+  fetchOpportunities();
+});
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push(`/courses?search=${searchQuery.value}`);
+  }
+};
+
+// Actual course data from your curriculum
+const courses = ref([
+  {
+    id: 1,
+    title: 'HTML & CSS Fundamentals',
+    category: 'Web Development',
+    image: '/background.jpg',
+    description: 'Learn the building blocks of web development'
+  },
+  {
+    id: 2,
+    title: 'Cybersecurity Basics',
+    category: 'Cybersecurity',
+    image: '/cyber.png',
+    description: 'Protect yourself and your data online'
+  },
+  {
+    id: 3,
+    title: 'Media Information Literacy',
+    category: 'Digital Literacy',
+    emoji: '📚',
+    description: 'Navigate the digital world safely and responsibly'
+  },
+  {
+    id: 4,
+    title: 'Coding for Kids',
+    category: 'Programming',
+    image: '/kids.png',
+    description: 'Fun and interactive coding lessons designed for young learners'
+  }
+]);
+
+// Show first 4 courses as popular
+const popularCourses = computed(() => courses.value.slice(0, 4));
+
+const goToCourse = (courseId) => {
+  router.push(`/courses`);
+};
 
 const homeAnnouncements = computed(() => {
   const active = announcements.value.filter((a) => !isExpired(a.expiry_date));
@@ -263,7 +451,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('/background.jpg') no-repeat center center;
+  background: url('/publica.png') no-repeat center center;
   background-size: cover;
   background-position: center;
   filter: blur(2px);
@@ -286,7 +474,7 @@ onMounted(() => {
 
 .hero-left {
   flex: 1;
-  max-width: 600px;
+  max-width: 800px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -307,24 +495,137 @@ onMounted(() => {
 }
 
 
-.hero-content h1 {
-  font-size: 2.5rem;
+.learner-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.hero-title {
+  font-size: 3.5rem;
   font-weight: 700;
   color: #FFFFFF;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  line-height: 1.2;
 }
 
 .hero-subtitle {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: #FFFFFF;
   margin-bottom: 2rem;
   opacity: 0.95;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 600px;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  font-weight: 400;
+}
+
+.typing-text {
+  color: #ff9900;
+  font-weight: 600;
+}
+
+.typing-cursor {
+  animation: blink 1s infinite;
+  color: #ff9900;
+  font-weight: 600;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Hero Search Bar */
+.hero-search {
+  display: flex;
+  max-width: 600px;
+  margin: 0 auto 3rem auto;
+  gap: 0.5rem;
+}
+
+.hero-search .search-input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hero-search .search-input:focus {
+  outline: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.hero-search .search-btn {
+  padding: 1rem 2rem;
+  background: #ff9900;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+}
+
+.hero-search .search-btn:hover {
+  background: #e68600;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 153, 0, 0.4);
+}
+
+/* Hero Statistics */
+.hero-stats {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+  margin: 2rem auto 0 auto;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  color: #ff9900;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.1rem;
   font-weight: 700;
+  color: white;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .cta-buttons {
@@ -649,54 +950,250 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-/* Features Section */
-.features-section {
-  padding: 4rem 0;
-  background: white;
+/* Popular Courses Section */
+.courses-section {
+  padding: 5rem 0;
+  background: #f8f9fa;
 }
 
-.features-section h2 {
+.section-title {
   font-size: 2.5rem;
   font-weight: 700;
   color: #1a365d;
   text-align: center;
-  margin-bottom: 3rem;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
-
-.feature-card {
-  background: #f8f9fa;
-  border-radius: 16px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-4px);
-}
-
-.feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
-}
-
-.feature-card h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1a365d;
   margin-bottom: 1rem;
 }
 
-.feature-card p {
+.section-subtitle {
+  text-align: center;
   color: #6c757d;
+  font-size: 1.1rem;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.course-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.course-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border-color: #e68c07;
+}
+
+.course-icon-wrapper {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.course-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.course-emoji {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.course-category {
+  background: linear-gradient(135deg, #e68c07 0%, #cc8809 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.course-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.course-content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.course-description {
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.view-all-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.view-all-btn {
+  background: linear-gradient(135deg, #e68c07 0%, #cc8809 100%);
+  color: white;
+  padding: 0.875rem 2.5rem;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.view-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(230, 140, 7, 0.4);
+}
+
+/* Why Shieldmaidens Section */
+.why-section {
+  padding: 5rem 0;
+  background: #1f2937;
+}
+
+.why-section .section-title {
+  color: white;
+}
+
+.why-section .features-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.why-section .feature-card {
+  background: #374151;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.why-section .feature-card:hover {
+  transform: translateY(-4px);
+}
+
+.why-section .feature-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem auto;
+  overflow: hidden;
+}
+
+.why-section .feature-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.why-section .feature-card h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.why-section .feature-card p {
+  color: #d1d5db;
   line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Hero Section */
+.hero-section {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 2rem 0;
+}
+
+/* CTA Section */
+.cta-section {
+  padding: 5rem 0;
+  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+  color: white;
+  text-align: center;
+}
+
+.cta-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.cta-content h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.cta-content p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.cta-section .cta-buttons {
+  justify-content: center;
+}
+
+.cta-section .btn-primary {
+  background: linear-gradient(135deg, #e68c07 0%, #cc8809 100%);
+  color: white;
+}
+
+.cta-section .btn-primary:hover {
+  background: linear-gradient(135deg, #cc8809 0%, #b37a08 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(230, 140, 7, 0.4);
 }
 
 /* Responsive Design - Mobile First */
@@ -705,116 +1202,203 @@ onMounted(() => {
     padding: 1rem 0;
     min-height: 90vh;
   }
-  
+
   .hero-content {
     padding: 0 1rem;
     gap: 1rem;
   }
-  
+
   .hero-left {
     max-width: 100%;
     text-align: center;
   }
-  
+
   .hero-content h1 {
     font-size: 2rem;
     margin-bottom: 1rem;
   }
-  
+
+  .learner-badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
   .hero-subtitle {
     font-size: 1rem;
     margin-bottom: 1.5rem;
-    max-width: 400px;
+    max-width: 350px;
   }
-  
+
+  .hero-search {
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 350px;
+    margin: 0 auto 3rem auto;
+  }
+
+  .hero-search .search-input {
+    padding: 0.875rem 1rem;
+  }
+
+  .hero-search .search-btn {
+    padding: 0.875rem 1.5rem;
+    justify-content: center;
+  }
+
+  .hero-stats {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 0 1rem;
+    justify-content: center;
+  }
+
+  .stat-item {
+    padding: 0.75rem 1rem;
+  }
+
+  .stat-icon {
+    font-size: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .courses-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-icon-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+
+  .course-emoji {
+    font-size: 3rem;
+  }
+
+  .why-section .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .courses-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .course-icon-wrapper {
+    width: 100px;
+    height: 100px;
+  }
+
+  .why-section .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
   .cta-buttons {
     flex-direction: column;
     gap: 1rem;
     align-items: center;
   }
-  
+
   .btn-primary, .btn-secondary {
     width: 100%;
     max-width: 280px;
     padding: 0.875rem 1.5rem;
     font-size: 1rem;
   }
-  
+
   .announcements-section {
     padding: 2rem 0;
   }
-  
+
   .announcements-section h2 {
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
     padding: 0 1rem;
   }
-  
+
   .announcements-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
     padding: 0 1rem;
   }
-  
+
   .announcement-card {
     padding: 1rem;
     border-radius: 8px;
   }
-  
+
   .announcement-card h3 {
     font-size: 1rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .announcement-content {
     font-size: 0.875rem;
     margin-bottom: 0.75rem;
   }
-  
+
   .announcement-header {
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
   }
-  
+
   .announcement-actions {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .announcement-footer {
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
   }
-  
+
   .view-all-section {
     margin-top: 1.5rem;
     padding: 0 1rem;
   }
-  
+
   .view-all-btn {
     width: 100%;
     padding: 0.875rem 1.5rem;
     font-size: 0.9rem;
   }
-  
+
   .features-section {
     padding: 2rem 0;
   }
-  
+
   .features-section h2 {
     font-size: 1.75rem;
     margin-bottom: 1.5rem;
     padding: 0 1rem;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
     padding: 0 1rem;
   }
-  
+
   .feature-card {
     padding: 1.5rem;
     border-radius: 12px;
@@ -846,6 +1430,66 @@ onMounted(() => {
     font-size: 1rem;
     margin-bottom: 1.5rem;
   }
+  
+  .courses-section {
+    padding: 3rem 0;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+    padding: 0 1rem;
+  }
+
+  .section-subtitle {
+    font-size: 1rem;
+    padding: 0 1rem;
+  }
+
+  .why-section {
+    padding: 3rem 0;
+  }
+
+  .why-section .section-title {
+    font-size: 1.75rem;
+    padding: 0 1rem;
+  }
+
+  .why-section .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+
+  .why-section .feature-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+  }
+
+  .why-section .feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .why-section .feature-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .why-section .feature-card p {
+    font-size: 0.875rem;
+  }
+
+  .cta-section {
+    padding: 3rem 0;
+  }
+
+  .cta-content h2 {
+    font-size: 1.75rem;
+  }
+
+  .cta-content p {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -863,10 +1507,59 @@ onMounted(() => {
     margin-bottom: 0.75rem;
   }
   
+  .learner-badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.875rem;
+  }
+
+  .hero-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
   .hero-subtitle {
     font-size: 0.9rem;
     margin-bottom: 1.25rem;
     max-width: 350px;
+  }
+
+  .hero-search {
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 280px;
+    margin: 0 auto 3rem auto;
+  }
+
+  .hero-search .search-input {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .hero-search .search-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .hero-stats {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .stat-item {
+    padding: 0.625rem 0.875rem;
+  }
+
+  .stat-icon {
+    font-size: 1.125rem;
+  }
+
+  .stat-value {
+    font-size: 0.9rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
   }
   
   .cta-buttons {
@@ -946,12 +1639,61 @@ onMounted(() => {
   .feature-card p {
     font-size: 0.8rem;
   }
-  
-  .welcome-section {
-    padding: 1.5rem 0;
+
+  .courses-section {
+    padding: 2rem 0;
   }
-  
-  .welcome-section .hero-subtitle {
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .courses-grid {
+    padding: 0 0.75rem;
+  }
+
+  .course-image {
+    height: 120px;
+  }
+
+  .why-section {
+    padding: 2rem 0;
+  }
+
+  .why-section .section-title {
+    font-size: 1.5rem;
+  }
+
+  .why-section .features-grid {
+    padding: 0 0.75rem;
+  }
+
+  .why-section .feature-card {
+    padding: 1rem;
+  }
+
+  .why-section .feature-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .why-section .feature-card h3 {
+    font-size: 1.1rem;
+  }
+
+  .why-section .feature-card p {
+    font-size: 0.8rem;
+  }
+
+  .cta-section {
+    padding: 2rem 0;
+  }
+
+  .cta-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .cta-content p {
     font-size: 0.9rem;
   }
 }
@@ -962,13 +1704,27 @@ onMounted(() => {
     min-height: 100vh;
   }
   
-  .hero-content h1 {
+  .learner-badge {
+    font-size: 0.8rem;
+  }
+
+  .hero-title {
     font-size: 1.8rem;
   }
   
   .hero-subtitle {
     font-size: 0.85rem;
     margin-bottom: 1rem;
+  }
+
+  .hero-search {
+    flex-direction: row;
+    max-width: 400px;
+  }
+
+  .hero-stats {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   
   .cta-buttons {
@@ -984,7 +1740,11 @@ onMounted(() => {
 
 /* Tablet styles */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .hero-content h1 {
+  .learner-badge {
+    font-size: 0.85rem;
+  }
+
+  .hero-title {
     font-size: 3rem;
   }
   
